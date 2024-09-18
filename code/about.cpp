@@ -72,4 +72,16 @@ void show_license_info() {
     ImGui::SeparatorText("libpng");
     ImGui::TextUnformatted("Copyright (C) 1995-2024 The PNG Reference Library Authors.");
     ImGui::TextLinkOpenURL("http://www.libpng.org/pub/png/libpng.html");
+    
+    ImGui::SeparatorText("TagLib");
+    ImGui::TextUnformatted("Copyright (C) 2002 - 2008 by Scott Wheeler");
+    ImGui::TextLinkOpenURL("https://taglib.org/");
+    
+    ImGui::SeparatorText("zlib");
+    ImGui::TextUnformatted("Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler");
+    ImGui::TextLinkOpenURL("https://www.zlib.net/"):
+    
+    ImGui::SeparatorText("bzip2");
+    ImGui::TextUnformatted("Copyright (C) 1996-2019 Julian R Seward");
+    ImGui::TextLinkOpenURL("https://sourceware.org/bzip2/");
 }
