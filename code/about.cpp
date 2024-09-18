@@ -79,7 +79,7 @@ void show_license_info() {
     
     ImGui::SeparatorText("zlib");
     ImGui::TextUnformatted("Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler");
-    ImGui::TextLinkOpenURL("https://www.zlib.net/"):
+    ImGui::TextLinkOpenURL("https://www.zlib.net/");
     
     ImGui::SeparatorText("bzip2");
     ImGui::TextUnformatted("Copyright (C) 1996-2019 Julian R Seward");
