@@ -129,6 +129,10 @@ static void add_to_albums(const Track& track) {
     }
     
     Playlist& album = ui.albums[album_index];
+    if (strcmp(album.creator, track_md.artist)) {
+        zero_array(album.creator, LENGTH_OF_ARRAY(album.creator));
+        strcpy(album.creator, "Various Artists");
+    }
     album.tracks.append_unique(track);
 }
 
@@ -312,7 +316,7 @@ static void save_state() {
 static void string_to_lower(const char *in, char *out, int out_size) {
     int i = 0;
     int max = out_size - 1;
-    for (i = 0; (i < max) && *in; ++i, ++in) {
+    for (i = 0; (i < max) && *in; ++i) {
         out[i] = tolower(in[i]);
     }
     
