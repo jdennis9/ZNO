@@ -1082,6 +1082,7 @@ void show_track_context_menu(Playlist& from_playlist, u32 track_index) {
                 ImGui::TextDisabled(playlist.name);
             else if (ImGui::MenuItem(playlist.name)) {
                 ui.track_selection.copy_unique_to(playlist.tracks);
+                playlist.sort();
                 save_user_playlist(i);
             }
         }
