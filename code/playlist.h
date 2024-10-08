@@ -134,6 +134,11 @@ static inline bool track_from_file(const wchar_t *path, Track *track) {
     return true;
 }
 
+struct Playlist;
+
+void sort_playlist(Playlist& playlist, int metric, int order = SORT_ORDER_ASCENDING);
+void sort_playlist_array(Array<Playlist>& playlists, int metric, int order = SORT_ORDER_ASCENDING);
+
 struct Playlist {
     // Can be empty. Currently only used for albums
     char creator[PLAYLIST_NAME_MAX];
@@ -170,13 +175,14 @@ struct Playlist {
     
     
     inline bool add_track(const Track& track) {
-        return tracks.append_unique(track);
+        bool added = tracks.append_unique(track);
+        return added;
     }
     
     inline bool add_track(const wchar_t *path) {
         Track track = {};
         if (track_from_file(path, &track)) {
-            return this->add_track(track);
+            return this->add_track(track, no_sort);
         }
         return false;
     }
@@ -185,6 +191,10 @@ struct Playlist {
         for (u32 i = 0; i < t.count; ++i) {
             this->add_track(t[i]);
         }
+    }
+    
+    inline void sort() {
+        sort_playlist(*this, sort_metric, sort_order);
     }
     
     inline void clear() {
@@ -204,8 +214,5 @@ struct Playlist {
         return index;
     }
 };
-
-void sort_playlist(Playlist& playlist, int metric, int order = SORT_ORDER_ASCENDING);
-void sort_playlist_array(Array<Playlist>& playlists, int metric, int order = SORT_ORDER_ASCENDING);
 
 #endif //PLAYLIST_H

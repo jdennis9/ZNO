@@ -1306,6 +1306,7 @@ bool accept_drag_drop_to_playlist(Playlist& playlist) {
         tracks.count = payload->DataSize / sizeof(Track);
         
         playlist.add_tracks(tracks);
+        playlist.sort();
         return true;
     }
     else if (ImGui::AcceptDragDropPayload("FILES")) {
@@ -1317,6 +1318,7 @@ bool accept_drag_drop_to_playlist(Playlist& playlist) {
             const wchar_t *path = &payload.string_pool[payload.offsets[i]];
             add_tracks_to_playlist_iterator(&iter, path, is_path_a_folder(path));
         }
+        playlist.sort();
         return true;
     }
     

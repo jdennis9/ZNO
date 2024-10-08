@@ -370,6 +370,7 @@ bool show_add_files_menu(Playlist *playlist) {
         if (commit) {
             show_message_box(MESSAGE_BOX_TYPE_INFO, "Added %u tracks to %s",
                              iterator.track_count, iterator.target->name);
+            iterator.target->sort();
             return true;
         }
     }
@@ -381,6 +382,7 @@ bool show_add_files_menu(Playlist *playlist) {
         if (commit) {
             show_message_box(MESSAGE_BOX_TYPE_INFO, "Added %u tracks to %s",
                              iterator.track_count, iterator.target->name);
+            iterator.target->sort();
             return true;
         }
     }
