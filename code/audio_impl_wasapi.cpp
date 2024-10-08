@@ -162,7 +162,7 @@ static float wasapi_get_current_peak(void *data) {
         UINT channel_count;
         instance->meter->GetMeteringChannelCount(&channel_count);
         instance->meter->GetPeakValue(&volume);
-        return volume / (float)channel_count;
+        return volume;
     }
     return 0.f;
 }

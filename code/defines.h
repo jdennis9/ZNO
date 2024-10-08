@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <string.h>
 
-#define APP_VERSION_STRING "0.2.1"
+#define APP_VERSION_STRING "0.2.2"
 #define INLINE __forceinline
 #define ASSERT assert
 #define PATH_LENGTH 384

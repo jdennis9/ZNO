@@ -845,16 +845,16 @@ void show_ui() {
             format_time(get_playback_ms_duration()/1000, duration, 64);
             
             ImGui::Text("%s/%s", current, duration);
-        }
-        
-        // Seek slider
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 5));
-        {
+            
+            // Seek slider
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 5));
             static bool active_last_frame;
             static float position;
             bool active_now;
             active_now = circle_handle_slider("##seek_slider", &position, 0.f, 1.f,
                                               ImVec2(0, menu_bar_height - (style.FramePadding.y*2.f)));
+            ImGui::PopStyleVar();
+            
             if (active_last_frame && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
                 log_debug("%g\n", position);
                 seek_playback_to_ms((i64)(position * (float)get_playback_ms_duration()));
@@ -863,7 +863,6 @@ void show_ui() {
             
             active_last_frame = active_now;
         }
-        ImGui::PopStyleVar();
         
         
         ImGui::EndMainMenuBar();
@@ -939,14 +938,13 @@ void show_ui() {
     
     //-
     // Show filter properties
-    if (ImGui::BeginPopup(filter_popup_name)) {
+    if (ImGui::BeginPopupModal(filter_popup_name)) {
         bool commit = false;
         
-        ImGui::Text("Apply filter to %u tracks\n", ui.filter.input.count);
+        ImGui::Text("Apply filter to %u tracks", ui.filter.input.count);
         commit |= ImGui::InputText("Search for", ui.filter.query,
                                    sizeof(ui.filter.query), ImGuiInputTextFlags_EnterReturnsTrue);
         ImGui::SetItemDefaultFocus();
-        
         commit |= ImGui::Button("Filter");
         ImGui::SameLine();
         if (ImGui::Button("Cancel")) {
