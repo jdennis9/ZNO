@@ -727,7 +727,7 @@ void show_ui() {
     ASSERT(ui.ready);
     ImGuiIO& io = ImGui::GetIO();
     const ImGuiStyle& style = ImGui::GetStyle();
-    const char *filter_popup_name = "Filter";
+    const char *filter_popup_name = "Search playlist";
     ui.filter_popup_id = ImGui::GetID(filter_popup_name);
     
     // If the current track is not the track
@@ -938,14 +938,19 @@ void show_ui() {
     
     //-
     // Show filter properties
-    if (ImGui::BeginPopupModal(filter_popup_name)) {
+    ImGui::SetNextWindowSize(ImVec2(300, 0));
+    if (ImGui::BeginPopupModal(filter_popup_name, NULL, ImGuiWindowFlags_NoResize)) {
         bool commit = false;
         
-        ImGui::Text("Apply filter to %u tracks", ui.filter.input.count);
-        commit |= ImGui::InputText("Search for", ui.filter.query,
-                                   sizeof(ui.filter.query), ImGuiInputTextFlags_EnterReturnsTrue);
+        //ImGui::Text("Search %u tracks", ui.filter.input.count);
         ImGui::SetItemDefaultFocus();
-        commit |= ImGui::Button("Filter");
+        
+        if (ImGui::IsWindowFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            ImGui::SetKeyboardFocusHere();
+        
+        commit |= ImGui::InputText("##search_query", ui.filter.query,
+                                   sizeof(ui.filter.query), ImGuiInputTextFlags_EnterReturnsTrue);
+        commit |= ImGui::Button("Search");
         ImGui::SameLine();
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
