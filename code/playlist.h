@@ -182,7 +182,7 @@ struct Playlist {
     inline bool add_track(const wchar_t *path) {
         Track track = {};
         if (track_from_file(path, &track)) {
-            return this->add_track(track, no_sort);
+            return this->add_track(track);
         }
         return false;
     }
