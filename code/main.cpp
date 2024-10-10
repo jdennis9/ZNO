@@ -25,6 +25,7 @@
 #include "preferences.h"
 #include "metadata.h"
 #include <stdlib.h>
+#include <stdarg.h>
 #include <time.h>
 #include <locale.h>
 #include <windows.h>
@@ -895,6 +896,19 @@ static void remove_tray_icon() {
     if (g_tray_popup) {
         DestroyMenu(g_tray_popup);
     }
+}
+
+void set_window_title_message(const char *format, ...) {
+    wchar_t title[512];
+    char formatted_message[512];
+    va_list va;
+    va_start(va, format);
+    vsnprintf(formatted_message, sizeof(formatted_message), format, va);
+    va_end(va);
+    
+    _snwprintf(title, LENGTH_OF_ARRAY(title), L"ZNO MP " APP_VERSION_STRING " - %hs", formatted_message);
+    wprintf(L"%s\n", title);
+    SetWindowTextW(g_hwnd, title);
 }
 
 //-

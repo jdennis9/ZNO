@@ -62,5 +62,7 @@ Preferences& get_preferences();
 // Applies changes made to main preferences
 void apply_preferences();
 
+void set_window_title_message(const char *format, ...);
+
 #endif //MAIN_H
 

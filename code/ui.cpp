@@ -242,6 +242,11 @@ static void play_track(const Track& track) {
     ui.current_track = track;
     retrieve_file_path(track.path, track_path, PATH_LENGTH);
     play_file(track_path);
+    
+    Metadata md;
+    retrieve_metadata(track.metadata, &md);
+    
+    set_window_title_message("%s - %s", md.artist, md.title);
 }
 
 static void play_playlist(const Playlist& playlist, Track *start_track = NULL) {

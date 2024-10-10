@@ -169,8 +169,8 @@ static float wasapi_get_current_peak(void *data) {
         UINT channel_count;
         instance->meter->GetMeteringChannelCount(&channel_count);
         instance->meter->GetChannelsPeakValues(channel_count, volume);
-        for (u32 i = 0; i < channel_count; ++i) printf("%g ", volume[i]);
-        printf("\n");
+        //for (u32 i = 0; i < channel_count; ++i) printf("%g ", volume[i]);
+        //printf("\n");
         return volume[0];
     }
     return 0.f;
