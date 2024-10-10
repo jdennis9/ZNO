@@ -566,6 +566,7 @@ static void show_user_playlists() {
     if (action.user_requested_playlist) {
         const Playlist& playlist = ui.user_playlists[action.requested_playlist_index];
         ui.selected_user_playlist_id = playlist.get_id();
+        bring_window_to_front(WINDOW_PLAYLIST_TRACKS);
         play_playlist(playlist);
     }
     

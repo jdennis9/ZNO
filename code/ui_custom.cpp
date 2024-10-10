@@ -171,7 +171,7 @@ void peak_meter_widget(float value, ImVec2 size) {
 	ImVec2 cursor = ImGui::GetCursorScreenPos();
 	ImGuiStyle& style = ImGui::GetStyle();
     
-    value = log2f(value + 1.f);
+    //value = log2f(value + 1.f);
     value = clamp(value, 0.f, 1.f);
     
     ImVec2 min = {

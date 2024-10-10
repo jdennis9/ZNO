@@ -158,11 +158,20 @@ static float wasapi_get_volume(void *data) {
 static float wasapi_get_current_peak(void *data) {
     WASAPI_Instance *instance = (WASAPI_Instance*)data;
     if (instance->meter) {
-        float volume = 0.f;
+        /*float volume = 0.f;
         UINT channel_count;
         instance->meter->GetMeteringChannelCount(&channel_count);
         instance->meter->GetPeakValue(&volume);
-        return volume;
+        log_debug("%g\n", volume);
+        return volume;*/
+        
+        float volume[8];
+        UINT channel_count;
+        instance->meter->GetMeteringChannelCount(&channel_count);
+        instance->meter->GetChannelsPeakValues(channel_count, volume);
+        for (u32 i = 0; i < channel_count; ++i) printf("%g ", volume[i]);
+        printf("\n");
+        return volume[0];
     }
     return 0.f;
 }
