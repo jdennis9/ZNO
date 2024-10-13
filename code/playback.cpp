@@ -39,8 +39,6 @@ struct Decoder {
     u64 buffer_timestamp;
     Array<float> buffer[MAX_AUDIO_CHANNELS];
     Array<float> prev_buffer[MAX_AUDIO_CHANNELS];
-    
-    i32 prev_view_buffer_frames;
 };
 
 static Audio_Stream g_stream;
@@ -51,7 +49,10 @@ static bool g_paused;
 static void close_decoder(Decoder *dec) {
     if (dec->file) sf_close(dec->file);
     if (dec->resampler) src_delete(dec->resampler);
-    for (i32 i = 0; i < g_stream.channel_count; ++i) dec->buffer[i].free();
+    for (i32 i = 0; i < g_stream.channel_count; ++i) {
+        dec->buffer[i].free();
+        dec->prev_buffer[i].free();
+    }
     *dec = Decoder{};
 }
 
