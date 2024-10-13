@@ -71,7 +71,10 @@ struct Array {
     
     INLINE u32 append_array(T const *items, u32 item_count) {
         u32 offset = this->push(item_count);
-        memcpy(&data[offset], items, item_count * sizeof(T));
+        //memcpy(&data[offset], items, item_count * sizeof(T));
+        for (u32 i = 0; i < item_count; ++i) {
+            data[offset+i] = items[i];
+        }
         return offset;
     }
     

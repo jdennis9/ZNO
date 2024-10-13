@@ -19,16 +19,28 @@
 #include "platform.h"
 #include "audio.h"
 #include "main.h"
+#include "array.h"
 #include <sndfile.h>
 #include <samplerate.h>
 #include <math.h>
 #include <string.h>
+
+struct Buffer_View {
+    i32 first_frame;
+    i32 last_frame;
+};
 
 struct Decoder {
     SNDFILE *file;
     SRC_STATE *resampler;
     SF_INFO info;
     i64 frame_index;
+    u64 buffer_first_frame;
+    u64 buffer_timestamp;
+    Array<float> buffer[MAX_AUDIO_CHANNELS];
+    Array<float> prev_buffer[MAX_AUDIO_CHANNELS];
+    
+    i32 prev_view_buffer_frames;
 };
 
 static Audio_Stream g_stream;
@@ -39,6 +51,7 @@ static bool g_paused;
 static void close_decoder(Decoder *dec) {
     if (dec->file) sf_close(dec->file);
     if (dec->resampler) src_delete(dec->resampler);
+    for (i32 i = 0; i < g_stream.channel_count; ++i) dec->buffer[i].free();
     *dec = Decoder{};
 }
 
@@ -46,6 +59,83 @@ static bool open_decoder(Decoder *dec, const wchar_t *filename) {
     close_decoder(dec);
     dec->file = sf_wchar_open(filename, SFM_READ, &dec->info);
     if (!dec->file) return false;
+    
+    return true;
+}
+
+static void extract_channel_samples(f32 *input, u32 frame_count, u32 channel_count, Array<float> *output) {
+    u32 sample_count = frame_count*channel_count;
+    
+    for (u32 channel = 0; channel < channel_count; ++channel) {
+        output[channel].clear();
+        output[channel].push(frame_count);
+    }
+    
+    for (u32 frame = 0; frame < frame_count; ++frame) {
+        u32 first_sample = frame*channel_count;
+        for (u32 channel = 0; channel < channel_count; ++channel) {
+            output[channel][frame] = input[first_sample+channel];
+        }
+    }
+}
+
+static bool get_buffer_view(Decoder *dec, i32 frame_count, Buffer_View *view) {
+    if (!dec->buffer[0].count) return false;
+    
+    i32 delta_ms = (i32)perf_time_to_millis(perf_time_now() - dec->buffer_timestamp);
+    view->first_frame = delta_ms * ((u32)g_stream.sample_rate/1000);
+    view->first_frame -= (i32)frame_count;
+    view->first_frame = MAX(view->first_frame, 0);
+    frame_count = MIN(frame_count, (i32)dec->buffer[0].count - view->first_frame);
+    if (frame_count < 0) return false;
+    view->last_frame = view->first_frame + frame_count-1;
+    return true;
+}
+
+bool update_playback_buffer(Playback_Buffer *buffer) {
+    Decoder *dec = &g_decoder;
+    lock_mutex(g_lock);
+    defer(unlock_mutex(g_lock));
+    
+    // We don't need to copy if the playback buffer hasn't changed
+    if (buffer->data[0].data && buffer->timestamp == dec->buffer_timestamp) {
+        return true;
+    }
+    
+    buffer->timestamp = dec->buffer_timestamp;
+    buffer->sample_rate = g_stream.sample_rate;
+    buffer->frame_count = dec->buffer[0].count + dec->prev_buffer[0].count;
+    buffer->channel_count = g_stream.channel_count;
+    
+    for (i32 i = 0; i < buffer->channel_count; ++i) {
+        buffer->data[i].clear();
+        dec->prev_buffer[i].copy_to(buffer->data[i]);
+        dec->buffer[i].copy_to(buffer->data[i]);
+    }
+    
+    return true;
+}
+
+bool get_playback_buffer_view(Playback_Buffer *buffer, i32 frame_count, Playback_Buffer_View *view) {
+    if (!buffer->frame_count) {
+        *view = Playback_Buffer_View{};
+        return false;
+    }
+    
+    i32 delta_ms = (i32)perf_time_to_millis(perf_time_now() - buffer->timestamp);
+    i32 first_frame;
+    first_frame = delta_ms * (buffer->sample_rate/1000);
+    //first_frame -= frame_count;
+    first_frame = MAX(first_frame, 0);
+    frame_count = MIN(frame_count, buffer->frame_count - first_frame);
+    if (frame_count < 0) return false;
+    
+    view->frame_count = frame_count;
+    view->channel_count = buffer->channel_count;
+    
+    for (i32 i = 0; i < view->channel_count; ++i) {
+        view->data[i] = &buffer->data[i].data[first_frame];
+    }
     
     return true;
 }
@@ -63,7 +153,9 @@ void audio_stream_callback(void *user_data, f32 *output_buffer, const Audio_Buff
     Decoder *dec = (Decoder*)user_data;
     bool needs_resampling = dec->info.samplerate != spec->sample_rate;
     
+    
     zero_array(output_buffer, spec->frame_count * spec->channel_count);
+    dec->buffer_first_frame = dec->frame_index;
     
     if (!needs_resampling) {
         sf_count_t frames_read = sf_readf_float(dec->file, output_buffer, spec->frame_count);
@@ -114,7 +206,26 @@ void audio_stream_callback(void *user_data, f32 *output_buffer, const Audio_Buff
 #endif
     }
     
+    bool have_prev_buffer = dec->prev_buffer[0].count > 0;
+    
+    if (dec->buffer[0].count) for (i32 i = 0; i < spec->channel_count; ++i) {
+        dec->prev_buffer[i].clear();
+        dec->buffer[i].copy_to(dec->prev_buffer[i]);
+    }
+    
+    extract_channel_samples(output_buffer, spec->frame_count, spec->channel_count, dec->buffer);
+    
+    if (have_prev_buffer) {
+        f32 buffer_time_s = (f32)spec->frame_count/spec->sample_rate;
+        u64 buffer_ticks = (u64)(buffer_time_s*perf_time_frequency());
+        dec->buffer_timestamp = perf_time_now() - (buffer_ticks/2);
+    }
+    else {
+        dec->buffer_timestamp = perf_time_now();
+    }
+    
     dec->frame_index += spec->frame_count;
+    
 }
 
 void init_playback() {
@@ -197,10 +308,6 @@ void seek_playback_to_ms(i64 ms) {
     unlock_mutex(g_lock);
     
     log_debug("Seek to frame %lld\n", frame);
-}
-
-float get_current_playback_peak() {
-    return get_audio_stream_current_peak(&g_stream);
 }
 
     

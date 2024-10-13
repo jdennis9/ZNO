@@ -20,6 +20,7 @@
 #include "array.h"
 #include "playlist.h"
 #include "playback.h"
+#include "playback_analysis.h"
 #include "preferences.h"
 #include "metadata.h"
 #include "main.h"
@@ -736,6 +737,8 @@ void show_ui() {
     const char *filter_popup_name = "Search playlist";
     ui.filter_popup_id = ImGui::GetID(filter_popup_name);
     
+    update_playback_analyzers(16.66f);
+    
     // If the current track is not the track
     // we have detailed metadata for, load in the
     // new metadata. This must be done at the start of 
@@ -823,8 +826,8 @@ void show_ui() {
         
         // Peak meter
         ImGui::Separator();
-        peak_meter_widget(get_current_playback_peak(),
-                          ImVec2(100, menu_bar_height - (style.FramePadding.y*2.f)));
+        peak_meter_widget(get_playback_peak(),
+                          ImVec2(150, menu_bar_height - (style.FramePadding.y*2.f)));
         
         
         // Playback controls

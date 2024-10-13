@@ -133,6 +133,10 @@ static INLINE T clamp(T a, T min, T max) {
     return a;
 }
 
+static inline f32 lerp(f32 v0, f32 v1, f32 t) {
+    return (1 - t) * v0 + t * v1;
+}
+
 template<typename T>
 static INLINE void zero_array(T *array, size_t count) {
     memset(array, 0, count * sizeof(T));
@@ -156,6 +160,10 @@ u32 utf8_to_wchar(const char *in, wchar_t *buffer, u32 buffer_size);
 u64 perf_time_now();
 u64 perf_time_frequency();
 u64 read_whole_file(const wchar_t *path, void **buffer, bool null_terminate = false);
+
+static inline float perf_time_to_millis(u64 ticks) {
+    return ((float)ticks / (float)perf_time_frequency()) * 1000.f;
+}
 
 #define START_TIMER(var, text) struct {const char *name; u64 start;} timer__##var = {text, perf_time_now()};
 #define STOP_TIMER(var) \

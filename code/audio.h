@@ -22,6 +22,8 @@
 
 #include "defines.h"
 
+#define MAX_AUDIO_CHANNELS 2
+
 struct Audio_Buffer_Spec {
     i32 frame_count;
     i32 channel_count;
@@ -33,17 +35,17 @@ typedef void Audio_Stream_Interrupt_Fn(void *data);
 typedef void Audio_Stream_Close_Fn(void *data);
 typedef void Audio_Stream_Set_Volume_Fn(void *data, float volume);
 typedef float Audio_Stream_Get_Volume_Fn(void *data);
-typedef float Audio_Stream_Get_Current_Peak_Fn(void *data);
 
 struct Audio_Stream {
     void *data;
-    int sample_rate;
-    int channel_count;
+    i32 sample_rate;
+    i32 channel_count;
+    i32 latency_ms;
+    i32 buffer_duration_ms;
     
     Audio_Stream_Interrupt_Fn *interrupt_fn;
     Audio_Stream_Set_Volume_Fn *set_volume_fn;
     Audio_Stream_Get_Volume_Fn *get_volume_fn;
-    Audio_Stream_Get_Current_Peak_Fn *get_current_peak_fn;
     Audio_Stream_Close_Fn *close_fn;
 };
 
@@ -61,11 +63,6 @@ static inline void set_audio_stream_volume(Audio_Stream *stream, f32 volume) {
 static inline float get_audio_stream_volume(Audio_Stream *stream) {
     if (stream->get_volume_fn) return stream->get_volume_fn(stream->data);
     return 1.f;
-}
-
-static inline float get_audio_stream_current_peak(Audio_Stream *stream) {
-    if (stream->get_current_peak_fn) return stream->get_current_peak_fn(stream->data);
-    return 0.f;
 }
 
 static inline void close_audio_stream(Audio_Stream *stream) {
