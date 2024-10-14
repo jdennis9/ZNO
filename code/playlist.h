@@ -139,6 +139,14 @@ struct Playlist;
 void sort_playlist(Playlist& playlist, int metric, int order = SORT_ORDER_ASCENDING);
 void sort_playlist_array(Array<Playlist>& playlists, int metric, int order = SORT_ORDER_ASCENDING);
 
+static void shuffle_tracks(Array<Track>& tracks) {
+    u32 count = tracks.count;
+    for (u32 i = 0; i < count; ++i) {
+        u32 s = rand() % count;
+        swap(tracks[i], tracks[s]);
+    }
+}
+
 struct Playlist {
     // Can be empty. Currently only used for albums
     char creator[PLAYLIST_NAME_MAX];
@@ -165,11 +173,7 @@ struct Playlist {
     }
     
     inline void shuffle() {
-        u32 count = tracks.count;
-        for (u32 i = 0; i < count; ++i) {
-            u32 s = rand() % count;
-            swap(tracks[i], tracks[s]);
-        }
+        shuffle_tracks(tracks);
         unsorted = true;
     }
     

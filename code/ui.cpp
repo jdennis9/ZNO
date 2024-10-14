@@ -1106,6 +1106,21 @@ void show_track_context_menu(Playlist& from_playlist, u32 track_index) {
         
         ImGui::EndMenu();
     }
+    
+    if (from_playlist_id != ui.queue_id) {
+        ImGui::Separator();
+        if (ImGui::MenuItem("Add to queue")) {
+            if (ui.shuffle_on) shuffle_tracks(ui.track_selection);
+            ui.track_selection.copy_unique_to(ui.queue.tracks);
+        }
+        if (ImGui::MenuItem("Play")) {
+            ui.queue.clear();
+            if (ui.shuffle_on) shuffle_tracks(ui.track_selection);
+            ui.track_selection.copy_unique_to(ui.queue.tracks);
+            go_to_queue_position(0);
+        }
+    }
+    
 }
 
 static bool edit_path(const char *label, char *path, File_Type file_type) {
