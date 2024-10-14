@@ -389,6 +389,11 @@ static void show_queue() {
     if (action.user_requested_track) {
         go_to_queue_position(action.requested_track_index);
     }
+    
+    if (begin_window_drag_drop_target("##queue_drag_drop")) {
+        accept_drag_drop_to_playlist(ui.queue);
+        ImGui::EndDragDropTarget();
+    }
 }
 
 static void show_search_results() {
