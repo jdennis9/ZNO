@@ -22,7 +22,6 @@
 
 // Pass in NULL or an empty string to load the default
 // ImGui dark style colors
-void load_ui_theme(const char *path);
 void handle_end_of_track();
 void init_ui();
 void show_ui();

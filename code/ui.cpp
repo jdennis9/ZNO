@@ -1130,7 +1130,16 @@ static void show_prefs_editor() {
         ImGui::TableSetColumnIndex(0);
         ImGui::TextUnformatted("Theme");
         ImGui::TableSetColumnIndex(1);
-        apply |= edit_path("##theme", prefs.theme, FILE_TYPE_INI);
+        //apply |= edit_path("##theme", prefs.theme, FILE_TYPE_INI);
+        if (ImGui::BeginCombo("##select_theme", prefs.theme)) {
+            const char *new_theme = show_theme_selector_gui();
+            if (new_theme) {
+                strncpy0(prefs.theme, new_theme, sizeof(prefs.theme));
+                apply = true;
+            }
+            
+            ImGui::EndCombo();
+        }
         ImGui::PopID();
         
         ImGui::PushID("font");

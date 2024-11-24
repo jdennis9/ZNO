@@ -21,6 +21,7 @@
 #include "ui.h"
 #include "main.h"
 #include "video.h"
+#include "theme.h"
 #include "font_awesome.h"
 #include "preferences.h"
 #include "metadata.h"
@@ -859,7 +860,7 @@ void apply_preferences() {
     const Preferences& prefs = g_prefs;
     g_need_load_background = true;
     g_need_load_font = true;
-    load_ui_theme(prefs.theme);
+    load_theme(prefs.theme);
     g_prefs.save_to_file(PREFS_PATH);
 }
 
