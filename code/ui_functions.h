@@ -101,11 +101,13 @@ typedef u32 Track_List_Flags;
 enum {
     TRACK_LIST_FLAGS_NO_SORT = 1<<0,
     TRACK_LIST_FLAGS_NO_EDIT = 1<<1,
+    TRACK_LIST_FLAGS_NO_FILTER = 1<<2,
 };
 struct Track_List_Action {
     u32 requested_track_index;
     bool user_requested_track;
     bool user_altered_playlist;
+    bool want_apply_filter;
 };
 void show_playlist_track_list(const char *str_id, Playlist& playlist, Track current_track, 
                               Track_List_Action *action, Track_List_Flags flags = 0);

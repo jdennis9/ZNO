@@ -28,6 +28,7 @@
 #include <ctype.h>
 
 #define PLAYLIST_NAME_MAX 128
+#define FILTER_STRING_MAX 128
 
 struct Playlist;
 
@@ -152,6 +153,7 @@ struct Playlist {
     char creator[PLAYLIST_NAME_MAX];
     // Used to get the playlist id. Must not be empty
     char name[PLAYLIST_NAME_MAX];
+    char filter[FILTER_STRING_MAX];
     // DO NOT CALL APPEND DIRECTLY ON THIS IT WILL MESS UP SORTING
     Array<Track> tracks;
     int sort_metric;
@@ -176,7 +178,6 @@ struct Playlist {
         shuffle_tracks(tracks);
         unsorted = true;
     }
-    
     
     inline bool add_track(const Track& track) {
         bool added = tracks.append_unique(track);
@@ -219,4 +220,49 @@ struct Playlist {
     }
 };
 
+
+static inline void string_to_lower(const char *in, char *out, int out_size) {
+    int i = 0;
+    int max = out_size - 1;
+    for (i = 0; (i < max) && *in; ++i) {
+        out[i] = tolower(in[i]);
+    }
+    
+    out[i] = 0;
+}
+
+static inline bool string_contains_string_ignoring_case(const char *haystack, const char *needle) {
+	const char *n, *h;
+    
+	for (; *haystack; ++haystack) {
+		n = needle;
+		h = haystack;
+		while (*h && (tolower(*h) == tolower(*n))) {
+			n++;
+			h++;
+			if (*n == 0) return true;
+		}
+	}
+    
+	return false;
+}
+
+static bool metadata_meets_filter(const Metadata& md, const char *filter) {
+    if (md.title[0] && string_contains_string_ignoring_case(md.title, filter))
+        return true;
+    if (md.artist[0] && string_contains_string_ignoring_case(md.artist, filter))
+        return true;
+    if (md.album[0] && string_contains_string_ignoring_case(md.album, filter))
+        return true;
+    
+    return false;
+}
+
+static bool track_meets_filter(const Track& track, const char *filter) {
+    Metadata md;
+    retrieve_metadata(track.metadata, &md);
+    return metadata_meets_filter(md, filter);
+}
+
 #endif //PLAYLIST_H
+

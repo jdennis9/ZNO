@@ -319,50 +319,23 @@ static void save_state() {
     fclose(f);
 }
 
-static void string_to_lower(const char *in, char *out, int out_size) {
-    int i = 0;
-    int max = out_size - 1;
-    for (i = 0; (i < max) && *in; ++i) {
-        out[i] = tolower(in[i]);
-    }
-    
-    out[i] = 0;
-}
-
-static void apply_filter_query() {
-    const Array<Track>& tracks = ui.filter.input;
+static void apply_filter_query(Playlist& playlist) {
+    const Array<Track>& tracks = playlist.tracks;
     Array<Track>& output = ui.search_results.tracks;
-    char filter[128];
-    string_to_lower(ui.filter.query, filter, sizeof(filter));
+    char filter[FILTER_STRING_MAX];
+    string_to_lower(playlist.filter, filter, sizeof(filter));
+    
+    zero_array(playlist.filter, LENGTH_OF_ARRAY(playlist.filter));
     
     output.clear();
     for (u32 i = 0; i < tracks.count; ++i) {
         const Track& track = tracks[i];
-        Metadata md;
-        char a[128];
-        bool pass = false;
-        
-        retrieve_metadata(track.metadata, &md);
-        
-        if (md.title[0]) {
-            string_to_lower(md.title, a, sizeof(a));
-            pass = strstr(a, filter) != NULL;
-        }
-        
-        if (!pass && md.artist[0]) {
-            string_to_lower(md.artist, a, sizeof(a));
-            pass = strstr(a, filter) != NULL;
-        }
-        
-        if (!pass && md.album[0]) {
-            string_to_lower(md.album, a, sizeof(a));
-            pass = strstr(a, filter) != NULL;
-        }
-        
-        if (pass) {
+        if (track_meets_filter(track, filter)) {
             output.append(track);
         }
     }
+    
+    bring_window_to_front(WINDOW_SEARCH_RESULTS);
 }
 
 static void show_library() {
@@ -380,12 +353,17 @@ static void show_library() {
     }
     
     ui.library_altered |= action.user_altered_playlist;
+    
+    if (action.want_apply_filter) {
+        apply_filter_query(ui.library);
+    }
 }
 
 static void show_queue() {
     Track_List_Action action = {};
     // The queue is unsortable because it messes up the queue position
-    show_playlist_track_list("##queue", ui.queue, ui.current_track, &action, TRACK_LIST_FLAGS_NO_SORT);
+    show_playlist_track_list("##queue", ui.queue, ui.current_track, &action,
+                             TRACK_LIST_FLAGS_NO_SORT|TRACK_LIST_FLAGS_NO_FILTER);
     if (action.user_requested_track) {
         go_to_queue_position(action.requested_track_index);
     }
@@ -398,7 +376,8 @@ static void show_queue() {
 
 static void show_search_results() {
     Track_List_Action action = {};
-    show_playlist_track_list("##search_results", ui.search_results, ui.current_track, &action);
+    show_playlist_track_list("##search_results", ui.search_results, ui.current_track, &action,
+                             TRACK_LIST_FLAGS_NO_FILTER);
     if (action.user_requested_track) {
         Track& track = ui.search_results.tracks[action.requested_track_index];
         play_playlist(ui.search_results, &track);
@@ -733,6 +712,10 @@ static void show_selected_playlist() {
         retrieve_file_path(save_path, path, PATH_LENGTH);
         save_playlist_to_file(*playlist, path);
     }
+    
+    if (action.want_apply_filter) {
+        apply_filter_query(*playlist);
+    }
 }
 
 void show_ui() {
@@ -947,36 +930,6 @@ void show_ui() {
             if (ui.window_show_fn[i]) ui.window_show_fn[i]();
         }
         ImGui::End();
-    }
-    //-
-    
-    //-
-    // Show filter properties
-    ImGui::SetNextWindowSize(ImVec2(300, 0));
-    if (ImGui::BeginPopupModal(filter_popup_name, NULL, ImGuiWindowFlags_NoResize)) {
-        bool commit = false;
-        
-        //ImGui::Text("Search %u tracks", ui.filter.input.count);
-        ImGui::SetItemDefaultFocus();
-        
-        if (ImGui::IsWindowFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-            ImGui::SetKeyboardFocusHere();
-        
-        commit |= ImGui::InputText("##search_query", ui.filter.query,
-                                   sizeof(ui.filter.query), ImGuiInputTextFlags_EnterReturnsTrue);
-        commit |= ImGui::Button("Search");
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel")) {
-            ImGui::CloseCurrentPopup();
-        }
-        
-        if (commit) {
-            apply_filter_query();
-            bring_window_to_front(WINDOW_SEARCH_RESULTS);
-        }
-        
-        
-        ImGui::EndPopup();
     }
     //-
     
@@ -1265,9 +1218,18 @@ void select_track_in_playlist(Playlist& playlist, u32 track_index) {
     }
     
     if (ImGui::IsKeyDown(ImGuiMod_Shift)) {
-        u32 highest_index = get_highest_selection_index_before(playlist, playlist.tracks[track_index]);
-        ui.track_selection.clear();
-        playlist.tracks.copy_unique_range_to(highest_index, track_index, ui.track_selection);
+        if (!playlist.filter[0]) {
+            u32 highest_index = get_highest_selection_index_before(playlist, playlist.tracks[track_index]);
+            ui.track_selection.clear();
+            playlist.tracks.copy_unique_range_to(highest_index, track_index, ui.track_selection);
+        }
+        else {
+            // Selecting a track range while the tracks are being filtered
+            // will not only be unintuitive for the user but an absoulte pain
+            // to implement. So add the track to the selection as if the user
+            // is holding ctrl instead
+            ui.track_selection.append_unique(playlist.tracks[track_index]);
+        }
     }
     else {
         if (!ImGui::IsKeyDown(ImGuiMod_Ctrl)) ui.track_selection.clear();
@@ -1279,7 +1241,18 @@ void select_whole_playlist(Playlist& playlist) {
     u32 playlist_id = playlist.get_id();
     ui.track_selection_playlist_id = playlist_id;
     ui.track_selection.clear();
-    playlist.tracks.copy_to(ui.track_selection);
+    if (!playlist.filter[0]) {
+        playlist.tracks.copy_to(ui.track_selection);
+    }
+    else {
+        char filter[FILTER_STRING_MAX];
+        string_to_lower(playlist.filter, filter, sizeof(filter));
+        for (u32 i = 0; i < playlist.tracks.count; ++i) {
+            if (track_meets_filter(playlist.tracks[i], filter)) {
+                ui.track_selection.append(playlist.tracks[i]);
+            }
+        }
+    }
 }
 
 bool is_track_selected(const Track& track) {
@@ -1296,13 +1269,6 @@ void remove_selected_tracks_from_playlist(Playlist& playlist) {
 
 void clear_track_selection() {
     ui.track_selection.clear();
-}
-
-void begin_playlist_filter(const Playlist& playlist) {
-    memset(ui.filter.query, 0, sizeof(ui.filter.query));
-    ui.filter.input.clear();
-    playlist.tracks.copy_to(ui.filter.input);
-    ImGui::OpenPopup(ui.filter_popup_id);
 }
 
 void handle_end_of_track() {

@@ -146,13 +146,21 @@ static void show_track_range(Playlist& playlist, u32 start,
                              u32 end_exclusive, Track current_track, Track_List_Action *action, bool no_edit) {
     u32 playlist_id = playlist.get_id();
     bool want_remove = false;
+    Metadata metadata;
+            
+    char filter_lowercase[FILTER_STRING_MAX];
+    if (playlist.filter[0])
+        string_to_lower(playlist.filter, filter_lowercase, sizeof(filter_lowercase));
     
     for (u32 i_track = start; i_track != end_exclusive; ++i_track) {
         const Track& track = playlist.tracks[i_track];
         const bool is_selected = is_track_selected(track);
         const bool is_playing = current_track == track;
-        Metadata metadata;
         retrieve_metadata(track.metadata, &metadata);
+        
+        if (playlist.filter[0] && !metadata_meets_filter(metadata, filter_lowercase)) {
+            continue;
+        }
         
         ImGui::PushID((void*)(uintptr_t)i_track);
         
@@ -262,6 +270,14 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
         ImGuiTableFlags_SizingFixedFit|ImGuiTableFlags_Hideable|ImGuiTableFlags_Reorderable|
         ImGuiTableFlags_RowBg|ImGuiTableFlags_ScrollY;
     
+    if (!(flags & TRACK_LIST_FLAGS_NO_FILTER)) {
+        ImGui::InputTextWithHint("##filter", "Filter", playlist.filter, FILTER_STRING_MAX);
+        ImGui::SameLine();
+        if (ImGui::Button("Apply")) {
+            action->want_apply_filter = true;
+        }
+    }
+    
     const bool no_sort = (flags & TRACK_LIST_FLAGS_NO_SORT) != 0;
     if (!no_sort) table_flags |= ImGuiTableFlags_Sortable|ImGuiTableFlags_SortTristate;
     
@@ -289,13 +305,17 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
         ImGui::TableSetupScrollFreeze(1, 1);
         ImGui::TableHeadersRow();
         
-        // Cull out non-visible tracks
-        ImGuiListClipper clipper = ImGuiListClipper();
-        clipper.Begin(playlist.tracks.count);
-        
-        // Show visible tracks
-        if (playlist.tracks.count) while (clipper.Step()) {
-            show_track_range(playlist, clipper.DisplayStart, clipper.DisplayEnd, current_track, action, no_edit);
+        if (playlist.filter[0]) {
+            show_track_range(playlist, 0, playlist.tracks.count, current_track, action, no_edit);
+        } else {
+            // Cull out non-visible tracks
+            ImGuiListClipper clipper = ImGuiListClipper();
+            clipper.Begin(playlist.tracks.count);
+            
+            // Show visible tracks
+            if (playlist.tracks.count) while (clipper.Step()) {
+                show_track_range(playlist, clipper.DisplayStart, clipper.DisplayEnd, current_track, action, no_edit);
+            }
         }
         
         // Sort the playlist if the user clicks on one of the headers
@@ -309,10 +329,6 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
     if (focused) {
         if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_A) && focused) {
             select_whole_playlist(playlist);
-        }
-        
-        if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_F)){
-            begin_playlist_filter(playlist);
         }
     }
     
