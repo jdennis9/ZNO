@@ -207,7 +207,7 @@ void audio_stream_callback(void *user_data, f32 *output_buffer, const Audio_Buff
 #endif
     }
     
-    bool have_prev_buffer = dec->prev_buffer[0].count > 0;
+    bool have_prev_buffer = dec->buffer[0].count > 0;
     
     if (dec->buffer[0].count) for (i32 i = 0; i < spec->channel_count; ++i) {
         dec->prev_buffer[i].clear();

@@ -26,6 +26,7 @@ find_package(SampleRate CONFIG REQUIRED)
 target_link_libraries(main PRIVATE SampleRate::samplerate)
 find_package(taglib CONFIG REQUIRED)
 target_link_libraries(main PRIVATE TagLib::tag TagLib::tag_c TagLib::TagLib)
-#target_link_libraries(main PRIVATE TagLib::tag)
+find_package(FFTW3f CONFIG REQUIRED)
+target_link_libraries(main PRIVATE FFTW3::fftw3f)
 
 set_target_properties(main PROPERTIES OUTPUT_NAME "ZNO")
