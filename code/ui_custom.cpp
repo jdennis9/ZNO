@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "ui_functions.h"
+#include "theme.h"
 #include <imgui_internal.h>
 
 // Trim spaces from string
@@ -171,6 +172,10 @@ void peak_meter_widget(float value, ImVec2 size) {
 	ImVec2 cursor = ImGui::GetCursorScreenPos();
 	ImGuiStyle& style = ImGui::GetStyle();
     
+    if (size.y == 0.f) {
+        size.y = available_size.y;
+    }
+    
     //value = log2f(value + 1.f);
     value = clamp(value, 0.f, 1.f);
     
@@ -189,8 +194,8 @@ void peak_meter_widget(float value, ImVec2 size) {
         min.y + size.y,
     };
     
-    u32 low_color = ImGui::GetColorU32(ImVec4(0.f, 0.8f, 0.f, 1.f));
-    u32 high_color = ImGui::GetColorU32(ImVec4(0.f, 0.f, 0.f, 1.f));
+    u32 low_color = get_theme_color(THEME_COLOR_PEAK_METER);
+    u32 high_color = get_theme_color(THEME_COLOR_PEAK_METER_BG);
     draw_list->AddRectFilled(min, max, high_color);
     draw_list->AddRectFilled(min, mid_max, low_color);
     ImGui::Dummy(size);

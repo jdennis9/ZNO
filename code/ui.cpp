@@ -26,6 +26,7 @@
 #include "main.h"
 #include "video.h"
 #include "layouts.h"
+#include "theme.h"
 #include <ini.h>
 #include <imgui.h>
 
@@ -435,7 +436,7 @@ static void load_theme_from_file(const wchar_t *path) {
 }
 
 static void show_theme_editor() {
-    ImGuiStyle& style = ImGui::GetStyle();
+    /*ImGuiStyle& style = ImGui::GetStyle();
     
     if (ImGui::Button("Export")) {
         wchar_t path[PATH_LENGTH];
@@ -463,6 +464,14 @@ static void show_theme_editor() {
     
     for (u32 i = 0; i < ImGuiCol_COUNT; ++i) {
         ImGui::ColorEdit4(ImGui::GetStyleColorName(i), &style.Colors[i].x);
+    }*/
+    
+    bool dirty = show_theme_editor_gui();
+    if (dirty) {
+        ui.window_flags[WINDOW_THEME_EDITOR] |= ImGuiWindowFlags_UnsavedDocument;
+    }
+    else {
+        ui.window_flags[WINDOW_THEME_EDITOR] &= ~ImGuiWindowFlags_UnsavedDocument;
     }
 }
 
@@ -814,8 +823,8 @@ void show_ui() {
         
         // Peak meter
         ImGui::Separator();
-        peak_meter_widget(get_playback_peak(),
-                          ImVec2(150, menu_bar_height - (style.FramePadding.y*2.f)));
+        peak_meter_widget(get_playback_peak(), ImVec2(150, 0));
+        //ImGui::ProgressBar(get_playback_peak(), ImVec2(150, 0), "");
         
         
         // Playback controls
@@ -1028,6 +1037,8 @@ void init_ui() {
     
     load_state();
     atexit(&save_all_state);
+    
+    set_default_theme();
     
     ui.ready = true;
     STOP_TIMER(init_ui);

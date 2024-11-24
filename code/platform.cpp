@@ -92,8 +92,17 @@ bool show_yes_no_dialog(const char *title, const char *format, ...) {
     vsnprintf(message, sizeof(message), format, va);
     va_end(va);
     
-    UINT flags = 0;
     return MessageBoxA(NULL, message, title, MB_YESNO) == IDYES;
+}
+
+bool show_confirm_dialog(const char *title, const char *format, ...) {
+    char message[4096];
+    va_list va;
+    va_start(va, format);
+    vsnprintf(message, sizeof(message), format, va);
+    va_end(va);
+    
+    return MessageBoxA(NULL, message, title, MB_OKCANCEL) == IDOK;
 }
 
 bool does_file_exist(const wchar_t *path) {

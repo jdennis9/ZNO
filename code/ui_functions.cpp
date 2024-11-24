@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "ui_functions.h"
+#include "theme.h"
 #include <imgui.h>
 
 bool show_playlist_selectable(const Playlist& playlist, bool playing, ImGuiSelectableFlags flags) {
@@ -166,10 +167,10 @@ static void show_track_range(Playlist& playlist, u32 start,
         
         ImGui::TableNextRow();
         
-        //@NOTE: We don't use the PlotLines style color anywhere right now, so using it as
-        // a highlighter for the current playing track/playlist seems appropriate
-        if (is_playing) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0,
-                                               ImGui::GetColorU32(ImGuiCol_PlotLines));
+        if (is_playing) {
+            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0,
+                                   get_theme_color(THEME_COLOR_PLAYING_INDICATOR));
+        }
         
         if (ImGui::TableSetColumnIndex(TRACK_COLUMN_ALBUM)) {
             ImGui::TextUnformatted(metadata.album);

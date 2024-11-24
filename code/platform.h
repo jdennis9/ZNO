@@ -65,6 +65,7 @@ void unlock_mutex(Mutex mutex);
 void destroy_mutex(Mutex mutex);
 void show_message_box(Message_Box_Type type, const char *format, ...);
 bool show_yes_no_dialog(const char *title, const char *format, ...);
+bool show_confirm_dialog(const char *title, const char *format, ...);
 bool does_file_exist(const wchar_t *path);
 bool open_file_select_dialog(File_Type file_type, wchar_t *buffer, int buffer_size);
 bool open_file_save_dialog(File_Type file_type, wchar_t *buffer, int buffer_size);
