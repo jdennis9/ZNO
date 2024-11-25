@@ -88,6 +88,7 @@ static void calc_spectrum(Playback_Buffer_View *view, Spectrum *sg) {
 
     if (view->frame_count != cfg_frame_count) {
         kiss_fftr_free(cfg);
+        cfg_frame_count = view->frame_count;
         cfg = kiss_fftr_alloc(cfg_frame_count, 0, NULL, NULL);
     }
 
