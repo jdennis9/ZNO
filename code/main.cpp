@@ -86,6 +86,7 @@ static Background g_background;
 static Hotkey g_hotkeys[HOTKEY__COUNT];
 static bool g_hotkey_is_bound[HOTKEY__COUNT];
 static Preferences g_prefs;
+static bool g_prefs_dirty;
 static bool g_need_load_font;
 static bool g_need_load_background;
 static bool g_capture_next_input;
@@ -240,6 +241,10 @@ int main(int argc, char *argv[])
                 log_debug("Received WM_QUIT\n");
             }
             continue;
+        }
+
+        if (g_prefs_dirty) {
+            g_prefs.save_to_file(PREFS_PATH);
         }
         
         if (!running) break;
@@ -854,6 +859,10 @@ bool is_hotkey_being_captured(int hotkey) {
 
 Preferences& get_preferences() {
     return g_prefs;
+}
+
+void set_preferences_dirty() {
+    g_prefs_dirty = true;
 }
 
 void apply_preferences() {

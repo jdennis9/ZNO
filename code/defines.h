@@ -68,6 +68,9 @@ typedef double f64;
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
+// Constants
+#define PI 3.14159265359f
+
 template <typename F>
 struct Defer_Holder_ {
 	F f;

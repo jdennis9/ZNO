@@ -166,7 +166,7 @@ bool circle_handle_slider(const char *str_id, float *p_value, float min, float m
     draw_list->AddRectFilled(min, mid_max, fg);
 }*/
 
-void peak_meter_widget(float value, ImVec2 size) {
+void peak_meter_widget(const char *str_id, float value, ImVec2 size) {
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
 	ImVec2 available_size = ImGui::GetContentRegionAvail();
 	ImVec2 cursor = ImGui::GetCursorScreenPos();
@@ -198,7 +198,7 @@ void peak_meter_widget(float value, ImVec2 size) {
     u32 high_color = get_theme_color(THEME_COLOR_PEAK_METER_BG);
     draw_list->AddRectFilled(min, max, high_color);
     draw_list->AddRectFilled(min, mid_max, low_color);
-    ImGui::Dummy(size);
+    ImGui::InvisibleButton(str_id, size);
 }
 
 bool begin_status_bar() {

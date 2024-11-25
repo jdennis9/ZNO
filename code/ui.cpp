@@ -174,6 +174,7 @@ const char *get_window_name(int window) {
         case WINDOW_USER_PLAYLISTS: return "Your Playlists";
         case WINDOW_PLAYLIST_TRACKS: return "Playlist";
         case WINDOW_THEME_EDITOR: return "Theme";
+        case WINDOW_V_SPECTRUM: return "Spectrum";
     }
     
     return NULL;
@@ -192,6 +193,7 @@ const char *get_window_internal_name(int window) {
         case WINDOW_USER_PLAYLISTS: return "UserPlaylists";
         case WINDOW_PLAYLIST_TRACKS: return "PlaylistTracks";
         case WINDOW_THEME_EDITOR: return "ThemeEditor";
+        case WINDOW_V_SPECTRUM: return "Spectrum";
     }
     
     return NULL;
@@ -744,6 +746,7 @@ void show_ui() {
     update_detailed_metadata();
     
     float menu_bar_height;
+    Preferences &prefs = get_preferences();
     
     //-
     // Main menu
@@ -792,12 +795,27 @@ void show_ui() {
         }
         
         if (ImGui::BeginMenu("View")) {
-            for (int i = 0; i < WINDOW__COUNT; ++i) {
-                const char *name = get_window_name(i);
-                if (ImGui::MenuItem(name, NULL, ui.show_window[i])) {
-                    bring_window_to_front(i);
+            if (ImGui::BeginMenu("Windows")) {
+                for (int i = 0; i < WINDOW__FIRST_VISUALIZER; ++i) {
+                    const char *name = get_window_name(i);
+                    if (ImGui::MenuItem(name, NULL, ui.show_window[i])) {
+                        bring_window_to_front(i);
+                    }
                 }
+
+                ImGui::EndMenu();
             }
+
+            if (ImGui::BeginMenu("Visualizers")) {
+                for (int i = WINDOW__FIRST_VISUALIZER; i < WINDOW__COUNT; ++i) {
+                    const char *name = get_window_name(i);
+                    if (ImGui::MenuItem(name, NULL, ui.show_window[i])) {
+                        bring_window_to_front(i);
+                    }
+                }
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMenu();
         }
         
@@ -821,11 +839,27 @@ void show_ui() {
         }
         ImGui::PopItemWidth();
         
-        // Peak meter
+        // Menu bar visualizer
         ImGui::Separator();
-        peak_meter_widget(get_playback_peak(), ImVec2(150, 0));
-        //ImGui::ProgressBar(get_playback_peak(), ImVec2(150, 0), "");
-        
+        switch (prefs.menu_bar_visualizer) {
+        case MENU_BAR_VISUAL_PEAK_METER:
+            peak_meter_widget("##peak_meter", get_playback_peak(), ImVec2(150, 0));
+            break;
+        case MENU_BAR_VISUAL_SPECTRUM:
+            show_spectrum_widget("##spectrum", 150);
+            break;
+        }
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Spectrum")) {
+                prefs.menu_bar_visualizer = MENU_BAR_VISUAL_SPECTRUM;
+                set_preferences_dirty();
+            }
+            if (ImGui::MenuItem("Peak Meter")) {
+                prefs.menu_bar_visualizer = MENU_BAR_VISUAL_PEAK_METER;
+                set_preferences_dirty();
+            }
+            ImGui::EndPopup();
+        }
         
         // Playback controls
         ImGui::Separator();
@@ -1028,6 +1062,7 @@ void init_ui() {
     ui.window_show_fn[WINDOW_SEARCH_RESULTS] = &show_search_results;
     ui.window_show_fn[WINDOW_THEME_EDITOR] = &show_theme_editor;
     ui.window_show_fn[WINDOW_ALBUM_LIST] = &show_album_list_view;
+    ui.window_show_fn[WINDOW_V_SPECTRUM] = &show_spectrum_ui;
     
     ui.window_flags[WINDOW_METADATA] = ImGuiWindowFlags_AlwaysVerticalScrollbar;
     

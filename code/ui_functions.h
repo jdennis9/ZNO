@@ -36,6 +36,8 @@ enum {
     WINDOW_THEME_EDITOR,
     WINDOW_SEARCH_RESULTS,
     WINDOW_LIBRARY,
+    WINDOW__FIRST_VISUALIZER,
+    WINDOW_V_SPECTRUM = WINDOW__FIRST_VISUALIZER,
     WINDOW__COUNT,
 };
 
@@ -53,8 +55,6 @@ bool is_track_selected(const Track& track);
 void clear_track_selection();
 void remove_selected_tracks_from_playlist(Playlist& playlist);
 void select_whole_playlist(Playlist& playlist);
-// Creates a copy of the playlist
-void begin_playlist_filter(const Playlist& playlist);
 // Start a drag-drop with the current track selection as the payload
 void begin_track_drag_drop();
 // Call this within ImGui::Begin/EndDragDropTarget. Accepts files from windows shell as well
@@ -123,7 +123,7 @@ bool load_playlist_from_file(const wchar_t *path, Playlist& playlist);
 // From ui_custom.cpp. These all use imgui_internal.h
 bool circle_handle_slider(const char *str_id, float *value, float min, float max, ImVec2 size);
 // @TODO: Separate into left/right channels
-void peak_meter_widget(float value, ImVec2 size);
+void peak_meter_widget(const char *str_id, float value, ImVec2 size);
 // Calls ImGui::Begin() so make sure to call ImGui::End() no matter the return value is!
 bool begin_status_bar();
 void end_status_bar();

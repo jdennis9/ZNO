@@ -29,6 +29,13 @@ enum {
     CLOSE_POLICY__COUNT,
 };
 
+// Serialized
+enum {
+    MENU_BAR_VISUAL_SPECTRUM = 0,
+    MENU_BAR_VISUAL_PEAK_METER = 1,
+    MENU_BAR_VISUAL__COUNT,
+};
+
 static const char *close_policy_to_string(int p) {
     switch (p) {
         case CLOSE_POLICY_ALWAYS_ASK: return "Always ask";
@@ -45,6 +52,7 @@ struct Preferences {
     int font_size;
     int icon_font_size;
     int close_policy;
+    int menu_bar_visualizer;
     
     static constexpr int FONT_SIZE_MIN = 8;
     static constexpr int FONT_SIZE_MAX = 24;
@@ -66,6 +74,7 @@ struct Preferences {
         fprintf(f, "iFontSize = %d\n", font_size);
         fprintf(f, "iIconFontSize = %d\n", icon_font_size);
         fprintf(f, "iClosePolicy = %d\n", close_policy);
+        fprintf(f, "iMenuBarVisualizer = %d\n", menu_bar_visualizer);
         
         fclose(f);
     }
@@ -85,7 +94,9 @@ struct Preferences {
             else if (!strcmp(key, "iIconFontSize"))
                 p->icon_font_size = clamp(atoi(value), FONT_SIZE_MIN, FONT_SIZE_MAX);
             else if (!strcmp(key, "iClosePolicy"))
-                p->close_policy = clamp(atoi(value), (int)CLOSE_POLICY_ALWAYS_ASK, (int)CLOSE_POLICY_EXIT);
+                p->close_policy = clamp(atoi(value), 0, CLOSE_POLICY__COUNT-1);
+            else if (!strcmp(key, "iMenuBarVisualizer"))
+                p->menu_bar_visualizer = clamp(atoi(value), 0, MENU_BAR_VISUAL__COUNT-1);
             return 1;
         };
         

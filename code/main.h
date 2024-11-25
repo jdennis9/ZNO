@@ -59,6 +59,9 @@ bool get_hotkey_bind_string(int hotkey, char *buffer, int buffer_size);
 const char *get_hotkey_name(int hotkey);
 // Get main preferences
 Preferences& get_preferences();
+// Notify main that we have made a change to
+// the preferences and they need to be saved
+void set_preferences_dirty();
 // Applies changes made to main preferences
 void apply_preferences();
 
