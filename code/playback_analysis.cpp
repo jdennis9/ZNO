@@ -5,6 +5,8 @@
 #include "playback.h"
 
 #define SG_BAND_COUNT 11
+#define PEAK_ROUGHNESS 0.015f
+#define SPECTRUM_ROUGHNESS 0.03f
 
 static int SG_BAND_OFFSETS[] = {
     0,
@@ -125,13 +127,16 @@ static void calc_spectrum(Playback_Buffer_View *view, Spectrum *sg) {
         sg->peaks[band] = MAX(mag, sg->peaks[band]);
     }
 
+    for (int i = 0; i < SG_BAND_COUNT; ++i) {
+        sg->peaks[i] /= 2.6f;
+    }
 }
 
 void show_spectrum_widget(const char *str_id, float width) {
     const Spectrum &sg = g_metrics.spectrum;
     g_metrics.need_update_spectrum = true;
     ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
-    ImGui::PlotHistogram(str_id, sg.peaks, SG_BAND_COUNT, 0, NULL, 0.f, 2.6f, ImVec2(width, 0));
+    ImGui::PlotHistogram(str_id, sg.peaks, SG_BAND_COUNT, 0, NULL, 0.f, 1.f, ImVec2(width, 0));
     ImGui::PopStyleColor();
 }
 
@@ -156,7 +161,7 @@ void show_spectrum_ui() {
     }*/
 
     ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
-    ImGui::PlotHistogram("##spectrum", sg.peaks, SG_BAND_COUNT, 0, NULL, 0.f, 2.6f, region);
+    ImGui::PlotHistogram("##spectrum", sg.peaks, SG_BAND_COUNT, 0, NULL, 0.f, 1.f, region);
     ImGui::PopStyleColor();
 
     //ImGui::Text("Max: %g", max_detected);
@@ -173,17 +178,21 @@ void update_playback_analyzers(f32 delta_ms) {
     get_playback_buffer_view(&g_buffer, frames_wanted, &view);
     
     if (view.frame_count == 0 || !view.data[0]) {
+        for (int i = 0; i < SG_BAND_COUNT; ++i) {
+            g_metrics.spectrum.peaks[i] = lerp(g_metrics.spectrum.peaks[i], 0, delta_ms*SPECTRUM_ROUGHNESS);
+        }
+
+        g_metrics.peak = lerp(g_metrics.peak, 0, delta_ms*PEAK_ROUGHNESS);
+
         return;
     }
     
     hann_window(&view, &windowed_view);
     defer(free_windowed_view(&windowed_view));
-    
-    START_TIMER(analyze, "Analyze audio");
 
     if (g_metrics.need_update_peak) {
         g_metrics.need_update_peak = false;
-        g_metrics.peak = lerp(g_metrics.peak, calc_frame_peak(&view), delta_ms*0.015f);
+        g_metrics.peak = lerp(g_metrics.peak, calc_frame_peak(&view), delta_ms*PEAK_ROUGHNESS);
     }
 
     if (g_metrics.need_update_spectrum) {
@@ -192,12 +201,10 @@ void update_playback_analyzers(f32 delta_ms) {
 
         calc_spectrum(&windowed_view, &frame_sg);
         for (u32 i = 0; i < SG_BAND_COUNT; ++i) {
-            peaks[i] = lerp(peaks[i], frame_sg.peaks[i], delta_ms*0.03f);
+            peaks[i] = lerp(peaks[i], frame_sg.peaks[i], delta_ms*SPECTRUM_ROUGHNESS);
         }
         g_metrics.need_update_spectrum = false;
     }
-
-    STOP_TIMER(analyze);
 }
 
 

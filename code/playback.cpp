@@ -98,6 +98,15 @@ bool update_playback_buffer(Playback_Buffer *buffer) {
     lock_mutex(g_lock);
     defer(unlock_mutex(g_lock));
     
+    if (g_paused) {
+        buffer->frame_count = 0;
+        for (u32 i = 0; i < buffer->channel_count; ++i) {
+            buffer->data[i].clear();
+        }
+
+        return true;
+    }
+
     // We don't need to copy if the playback buffer hasn't changed
     if (buffer->data[0].data && buffer->timestamp == dec->buffer_timestamp) {
         return true;
