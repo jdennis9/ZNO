@@ -23,8 +23,8 @@
 
 void init_ui();
 void show_ui();
-void go_to_next_track();
-void go_to_prev_track();
+void ui_play_next_track();
+void ui_play_previous_track();
 Track ui_get_playing_track();
 
 #endif //UI_H

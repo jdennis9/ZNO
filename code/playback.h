@@ -22,7 +22,7 @@
 #include "audio.h"
 #include "array.h"
 
-enum Playback_State{
+enum Playback_State {
     PLAYBACK_STATE_STOPPED,
     PLAYBACK_STATE_PAUSED,
     PLAYBACK_STATE_PLAYING,
@@ -42,23 +42,20 @@ struct Playback_Buffer_View {
     i32 channel_count;
 };
 
-void init_playback();
-bool play_file(const wchar_t *path);
-void unload_playing_file();
-void set_playback_paused(bool paused);
-void toggle_playback();
-Playback_State get_playback_state();
-float get_playback_volume();
-void set_playback_volume(float volume);
-// In milliseconds
-u64 get_playback_ms_duration();
-i64 get_playback_ms_position();
-void seek_playback_to_ms(i64 ms);
-// Get the volume peak at the current time (0-1)
-float get_current_playback_peak();
+void playback_init();
+bool playback_load_file(const wchar_t *path);
+void playback_unload_file();
+void playback_set_paused(bool paused);
+void playback_toggle();
+Playback_State playback_get_state();
+float playback_get_volume();
+void playback_set_volume(float volume);
+u64 playback_get_duration_millis();
+i64 playback_get_position_millis();
+void playback_seek_to_millis(i64 ms);
 // Copy the global audio buffer if the timestamp doesn't match the timestamp of
 // the provided buffer
-bool update_playback_buffer(Playback_Buffer *buffer);
+bool playback_update_capture_buffer(Playback_Buffer *buffer);
 // Get a view of the playback buffer going 
 // frame_count frames back from the current position
 bool get_playback_buffer_view(Playback_Buffer *buffer, i32 frame_count, Playback_Buffer_View *view);

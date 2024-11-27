@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
     g_prefs.load_from_file(PREFS_PATH);
     g_icon = LoadIconA(hInstance, "WindowIcon");
     
-    init_playback();
+    playback_init();
     init_platform();
     install_media_controls_handler();
     
@@ -493,13 +493,13 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             log_debug("WM_HOTKEY: %lld\n", wParam);
             switch (wParam) {
                 case HOTKEY_TOGGLE_PLAYBACK:
-                toggle_playback();
+                playback_toggle();
                 break;
                 case HOTKEY_NEXT_TRACK:
-                go_to_next_track();
+                ui_play_next_track();
                 break;
                 case HOTKEY_PREV_TRACK:
-                go_to_prev_track();
+                ui_play_previous_track();
                 break;
             }
             return 0;
@@ -517,24 +517,24 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
         }
 
         case WM_USER+NOTIFY_PAUSE: {
-            set_playback_paused(true);
+            playback_set_paused(true);
             update_media_controls_state();
             return 0;
         }
 
         case WM_USER+NOTIFY_PLAY: {
-            set_playback_paused(false);
+            playback_set_paused(false);
             update_media_controls_state();
             return 0;
         }
 
         case WM_USER+NOTIFY_PREV_TRACK: {
-            go_to_prev_track();
+            ui_play_previous_track();
             return 0;
         }
 
         case WM_USER+NOTIFY_NEXT_TRACK: {
-            go_to_next_track();
+            ui_play_next_track();
             return 0;
         }
 

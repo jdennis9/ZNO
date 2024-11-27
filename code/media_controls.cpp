@@ -33,7 +33,7 @@ static void handle_button_pressed(SystemMediaTransportControls sender,
 }
 
 void update_media_controls_state() {
-    Playback_State playback_state = get_playback_state();
+    Playback_State playback_state = playback_get_state();
 
     switch (playback_state) {
     case PLAYBACK_STATE_PAUSED:

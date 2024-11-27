@@ -169,7 +169,7 @@ void show_spectrum_ui() {
 
 void update_playback_analyzers(f32 delta_ms) {
     u32 rounded_delta = ceilf(delta_ms);
-    update_playback_buffer(&g_buffer);
+    playback_update_capture_buffer(&g_buffer);
     
     Playback_Buffer_View windowed_view = {};
     Playback_Buffer_View view = {};

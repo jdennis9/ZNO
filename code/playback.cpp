@@ -93,7 +93,7 @@ static bool get_buffer_view(Decoder *dec, i32 frame_count, Buffer_View *view) {
     return true;
 }
 
-bool update_playback_buffer(Playback_Buffer *buffer) {
+bool playback_update_capture_buffer(Playback_Buffer *buffer) {
     Decoder *dec = &g_decoder;
     lock_mutex(g_lock);
     defer(unlock_mutex(g_lock));
@@ -238,20 +238,20 @@ void audio_stream_callback(void *user_data, f32 *output_buffer, const Audio_Buff
     
 }
 
-void init_playback() {
+void playback_init() {
     g_lock = create_mutex();
     open_wasapi_audio_stream(&audio_stream_callback, &g_decoder, &g_stream);
 }
 
-void unload_playing_file() {
+void playback_unload_file() {
     lock_mutex(g_lock);
     interrupt_audio_stream(&g_stream);
     close_decoder(&g_decoder);
     unlock_mutex(g_lock);
 }
 
-bool play_file(const wchar_t *path) {
-    unload_playing_file();
+bool playback_load_file(const wchar_t *path) {
+    playback_unload_file();
     
     lock_mutex(g_lock);
     defer(unlock_mutex(g_lock));
@@ -261,14 +261,14 @@ bool play_file(const wchar_t *path) {
         return false;
     }
     
-    if (g_paused) set_playback_paused(false);
+    if (g_paused) playback_set_paused(false);
     
     wlog_debug(L"Opened file %s for playback\n", path);
     
     return true;
 }
 
-void set_playback_paused(bool value) {
+void playback_set_paused(bool value) {
     lock_mutex(g_lock);
     defer(unlock_mutex(g_lock));
 
@@ -279,25 +279,25 @@ void set_playback_paused(bool value) {
     }
 }
 
-void toggle_playback() {
-    set_playback_paused(!g_paused);
+void playback_toggle() {
+    playback_set_paused(!g_paused);
 }
 
-Playback_State get_playback_state() {
+Playback_State playback_get_state() {
     if (!g_decoder.file) return PLAYBACK_STATE_STOPPED;
     else if (g_paused) return PLAYBACK_STATE_PAUSED;
     else return PLAYBACK_STATE_PLAYING;
 }
 
-void set_playback_volume(float volume) {
+void playback_set_volume(float volume) {
     set_audio_stream_volume(&g_stream, volume);
 }
 
-float get_playback_volume() {
+float playback_get_volume() {
     return get_audio_stream_volume(&g_stream);
 }
 
-u64 get_playback_ms_duration() {
+u64 playback_get_duration_millis() {
     SF_INFO info;
     u64 seconds;
     if (!g_decoder.file) return 0;
@@ -306,12 +306,12 @@ u64 get_playback_ms_duration() {
     return seconds * 1000;
 }
 
-i64 get_playback_ms_position() {
+i64 playback_get_position_millis() {
     if (!g_decoder.file) return 0;
     return (i64)(g_decoder.frame_index/g_stream.sample_rate)*1000;
 }
 
-void seek_playback_to_ms(i64 ms) {
+void playback_seek_to_millis(i64 ms) {
     i64 frame;
     if (!g_decoder.file) return;
     lock_mutex(g_lock);

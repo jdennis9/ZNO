@@ -245,7 +245,7 @@ static void play_track(const Track& track) {
     wchar_t track_path[PATH_LENGTH];
     ui.current_track = track;
     retrieve_file_path(track.path, track_path, PATH_LENGTH);
-    play_file(track_path);
+    playback_load_file(track_path);
     
     Metadata md;
     retrieve_metadata(track.metadata, &md);
@@ -288,12 +288,12 @@ static void go_to_queue_position(i32 position) {
     ui.queue_position = position;
 }
 
-void go_to_next_track() {
+void ui_play_next_track() {
     i32 position = ui.queue_position;
     go_to_queue_position(position + 1);
 }
 
-void go_to_prev_track() {
+void ui_play_previous_track() {
     i32 position = ui.queue_position;
     go_to_queue_position(position - 1);
 }
@@ -306,7 +306,7 @@ static void load_state() {
     auto callback = [](void *data, const char *section, const char *key, const char *value) -> int {
         if (!strcmp(key, "iVolume")) {
             float volume = clamp((float)atof(value), 0.f, 1.f);
-            set_playback_volume(volume);
+            playback_set_volume(volume);
         }
         else if (!strcmp(key, "bShuffle")) {
             ui.shuffle_on = atoi(value) != 0;
@@ -321,7 +321,7 @@ static void save_state() {
     FILE *f = fopen(STATE_PATH, "w");
     if (!f) return;
     
-    fprintf(f, "iVolume = %f\n", get_playback_volume());
+    fprintf(f, "iVolume = %f\n", playback_get_volume());
     fprintf(f, "bShuffle = %d\n", ui.shuffle_on);
     
     fclose(f);
@@ -835,11 +835,11 @@ void show_ui() {
         ImGui::Separator();
         ImGui::PushItemWidth(100.f);
         {
-            float volume = get_playback_volume();
+            float volume = playback_get_volume();
             int scaled_volume = (int)(volume * 100.f);
             if (ImGui::SliderInt("Volume", &scaled_volume, 0, 100, "%d%%")) {
                 volume = (float)scaled_volume / 100.f;
-                set_playback_volume(volume);
+                playback_set_volume(volume);
             }
         }
         ImGui::PopItemWidth();
@@ -869,16 +869,16 @@ void show_ui() {
         // Playback controls
         ImGui::Separator();
         {
-            bool paused = get_playback_state() != PLAYBACK_STATE_PLAYING;
+            bool paused = playback_get_state() != PLAYBACK_STATE_PLAYING;
             
             if (ImGui::MenuItem(SHUFFLE_ICON, NULL, ui.shuffle_on))
                 ui.shuffle_on = !ui.shuffle_on;
             if (ImGui::MenuItem(PREV_TRACK_ICON))
-                go_to_prev_track();
+                ui_play_previous_track();
             if (ImGui::MenuItem(paused ? PLAY_ICON : PAUSE_ICON))
-                toggle_playback();
+                playback_toggle();
             if (ImGui::MenuItem(NEXT_TRACK_ICON))
-                go_to_next_track();
+                ui_play_next_track();
         }
         
         ImGui::Separator();
@@ -886,8 +886,8 @@ void show_ui() {
         {
             char current[64];
             char duration[64];
-            format_time(get_playback_ms_position()/1000, current, 64);
-            format_time(get_playback_ms_duration()/1000, duration, 64);
+            format_time(playback_get_position_millis()/1000, current, 64);
+            format_time(playback_get_duration_millis()/1000, duration, 64);
             
             ImGui::Text("%s/%s", current, duration);
             
@@ -902,9 +902,9 @@ void show_ui() {
             
             if (active_last_frame && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
                 log_debug("%g\n", position);
-                seek_playback_to_ms((i64)(position * (float)get_playback_ms_duration()));
+                playback_seek_to_millis((i64)(position * (float)playback_get_duration_millis()));
             }
-            if (!active_now) position = (float)get_playback_ms_position()/(float)get_playback_ms_duration();
+            if (!active_now) position = (float)playback_get_position_millis()/(float)playback_get_duration_millis();
             
             active_last_frame = active_now;
         }
