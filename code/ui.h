@@ -19,14 +19,13 @@
 #define UI_H
 
 #include "defines.h"
+#include "playlist.h"
 
-// Pass in NULL or an empty string to load the default
-// ImGui dark style colors
-void handle_end_of_track();
 void init_ui();
 void show_ui();
 void go_to_next_track();
 void go_to_prev_track();
+Track ui_get_playing_track();
 
 #endif //UI_H
 

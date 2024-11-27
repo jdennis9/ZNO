@@ -170,7 +170,7 @@ void audio_stream_callback(void *user_data, f32 *output_buffer, const Audio_Buff
     if (!needs_resampling) {
         sf_count_t frames_read = sf_readf_float(dec->file, output_buffer, spec->frame_count);
         if (frames_read < spec->frame_count) {
-            notify(NOTIFY_END_OF_TRACK);
+            notify(NOTIFY_NEXT_TRACK);
         }
     }
     else {
@@ -188,7 +188,7 @@ void audio_stream_callback(void *user_data, f32 *output_buffer, const Audio_Buff
         
         sf_count_t frames_read = sf_readf_float(dec->file, pre_resample_buffer, input_frame_count);
         if (frames_read < input_frame_count) {
-            notify(NOTIFY_END_OF_TRACK);
+            notify(NOTIFY_NEXT_TRACK);
         }
         
         src.data_in = pre_resample_buffer;
@@ -257,7 +257,7 @@ bool play_file(const wchar_t *path) {
     defer(unlock_mutex(g_lock));
     
     if (!open_decoder(&g_decoder, path)) {
-        notify(NOTIFY_END_OF_TRACK);
+        notify(NOTIFY_NEXT_TRACK);
         return false;
     }
     
@@ -269,6 +269,9 @@ bool play_file(const wchar_t *path) {
 }
 
 void set_playback_paused(bool value) {
+    lock_mutex(g_lock);
+    defer(unlock_mutex(g_lock));
+
     if (!g_decoder.file) return;
     if (g_paused != value) {
         g_paused = value;

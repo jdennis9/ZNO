@@ -39,8 +39,13 @@
 #include <d3d10.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx10.h>
+#include <atlbase.h>
+#include <atlwin.h>
+#include <wmp.h>
 #include <stb_image.h>
+
 #include "drag_drop.h"
+#include "media_controls.h"
 
 #define WINDOW_CLASS_NAME L"ZNO_WINDOW_CLASS"
 #define WINDOW_TITLE (L"ZNO MP " APP_VERSION_STRING)
@@ -126,7 +131,8 @@ int main(int argc, char *argv[])
 #ifndef DEF_WIN_MAIN
     HINSTANCE hInstance = GetModuleHandle(NULL);
 #endif
-    
+
+
     ImGui_ImplWin32_EnableDpiAwareness();
     (void)OleInitialize(NULL);
     (void)CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -138,6 +144,7 @@ int main(int argc, char *argv[])
     
     init_playback();
     init_platform();
+    install_media_controls_handler();
     
     // Register window class
     {
@@ -168,12 +175,12 @@ int main(int argc, char *argv[])
 	{
 		BOOL on = TRUE;
 		DwmSetWindowAttribute(g_hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &on, sizeof(on));
-	}
+    }
     
     UpdateWindow(g_hwnd);
-    
+
     g_window.dpi_scale = ImGui_ImplWin32_GetDpiScaleForHwnd(g_hwnd);
-    
+
     //-
     // Initialize DirectX and ImGui
     START_TIMER(init_video, "Initialize DirectX10 and ImGui");
@@ -211,11 +218,13 @@ int main(int argc, char *argv[])
     // Load font and background before showing the window
     update_background();
     update_font();
-    
+
     create_tray_icon();
     init_drag_drop(g_hwnd);
     
     ShowWindow(g_hwnd, SW_NORMAL);
+
+
     
     bool running = true;
     while (running) {
@@ -495,11 +504,7 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             }
             return 0;
         }
-        
-        case WM_USER+NOTIFY_END_OF_TRACK: {
-            handle_end_of_track();
-            return 0;
-        }
+
         
         case WM_USER+NOTIFY_QUIT: {
 			PostQuitMessage(0);
@@ -508,6 +513,34 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
         
         case WM_USER+NOTIFY_MINIMIZE_TO_TRAY: {
             ShowWindow(hWnd, SW_HIDE);
+            return 0;
+        }
+
+        case WM_USER+NOTIFY_PAUSE: {
+            set_playback_paused(true);
+            update_media_controls_state();
+            return 0;
+        }
+
+        case WM_USER+NOTIFY_PLAY: {
+            set_playback_paused(false);
+            update_media_controls_state();
+            return 0;
+        }
+
+        case WM_USER+NOTIFY_PREV_TRACK: {
+            go_to_prev_track();
+            return 0;
+        }
+
+        case WM_USER+NOTIFY_NEXT_TRACK: {
+            go_to_next_track();
+            return 0;
+        }
+
+        case WM_USER+NOTIFY_NEW_TRACK_PLAYING: {
+            update_media_controls_metadata(ui_get_playing_track());
+            update_media_controls_state();
             return 0;
         }
 	}

@@ -251,6 +251,7 @@ static void play_track(const Track& track) {
     retrieve_metadata(track.metadata, &md);
     
     set_window_title_message("%s - %s", md.artist, md.title);
+    notify(NOTIFY_NEW_TRACK_PLAYING);
 }
 
 static void play_playlist(const Playlist& playlist, Track *start_track = NULL) {
@@ -295,6 +296,10 @@ void go_to_next_track() {
 void go_to_prev_track() {
     i32 position = ui.queue_position;
     go_to_queue_position(position - 1);
+}
+
+Track ui_get_playing_track() {
+    return ui.current_track;
 }
 
 static void load_state() {
@@ -1324,10 +1329,6 @@ void remove_selected_tracks_from_playlist(Playlist& playlist) {
 
 void clear_track_selection() {
     ui.track_selection.clear();
-}
-
-void handle_end_of_track() {
-    go_to_next_track();
 }
 
 void load_ui_theme(const char *path) {
