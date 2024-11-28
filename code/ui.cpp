@@ -599,15 +599,16 @@ static void show_user_playlists() {
     }
     
     if (action.user_requested_delete_playlist) {
-        Playlist &playlist = ui.user_playlists[action.altered_playlist_index];
+        u32 index = action.requested_delete_playlist_index;
+        Playlist &playlist = ui.user_playlists[index];
         if (show_yes_no_dialog("Confirm Delete Playlist", "Delete playlist '%s'?", playlist.name)) {
             wchar_t save_path[PATH_LENGTH];
-            retrieve_file_path(ui.user_playlist_paths[action.altered_playlist_index], 
+            retrieve_file_path(ui.user_playlist_paths[index], 
                                save_path, PATH_LENGTH);
             delete_file(save_path);
             playlist.tracks.free();
-            ui.user_playlists.ordered_remove(action.altered_playlist_index);
-            ui.user_playlist_paths.ordered_remove(action.altered_playlist_index);
+            ui.user_playlists.ordered_remove(index);
+            ui.user_playlist_paths.ordered_remove(index);
         }
     }
     
