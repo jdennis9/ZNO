@@ -22,6 +22,8 @@
 #include "audio.h"
 #include "array.h"
 
+#define PLAYBACK_CAPTURE_CHANNELS 2
+
 enum Playback_State {
     PLAYBACK_STATE_STOPPED,
     PLAYBACK_STATE_PAUSED,
