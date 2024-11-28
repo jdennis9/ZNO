@@ -31,17 +31,15 @@ enum Playback_State {
 };
 
 struct Playback_Buffer {
-    Array<float> data[MAX_AUDIO_CHANNELS];
+    Array<float> data[PLAYBACK_CAPTURE_CHANNELS];
     u64 timestamp;
     i32 frame_count;
-    i32 channel_count;
     i32 sample_rate;
 };
 
 struct Playback_Buffer_View {
-    const f32 *data[MAX_AUDIO_CHANNELS];
+    const f32 *data[PLAYBACK_CAPTURE_CHANNELS];
     i32 frame_count;
-    i32 channel_count;
 };
 
 void playback_init();

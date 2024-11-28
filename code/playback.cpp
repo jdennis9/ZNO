@@ -46,40 +46,6 @@ static Mutex g_lock;
 static bool g_paused;
 static Capture_Buffer g_capture;
 
-/*static void close_decoder(Decoder *dec) {
-    if (dec->file) sf_close(dec->file);
-    if (dec->resampler) src_delete(dec->resampler);
-    for (i32 i = 0; i < g_stream.channel_count; ++i) {
-        dec->buffer[i].free();
-        dec->prev_buffer[i].free();
-    }
-    *dec = Decoder{};
-}*/
-
-/*static bool open_decoder(Decoder *dec, const wchar_t *filename) {
-    close_decoder(dec);
-    dec->file = sf_wchar_open(filename, SFM_READ, &dec->info);
-    if (!dec->file) return false;
-    
-    return true;
-}*/
-
-static void extract_channel_samples(f32 *input, u32 frame_count, u32 channel_count, Array<float> *output) {
-    u32 sample_count = frame_count*channel_count;
-    
-    for (u32 channel = 0; channel < channel_count; ++channel) {
-        output[channel].clear();
-        output[channel].push(frame_count);
-    }
-    
-    for (u32 frame = 0; frame < frame_count; ++frame) {
-        u32 first_sample = frame*channel_count;
-        for (u32 channel = 0; channel < channel_count; ++channel) {
-            output[channel][frame] = input[first_sample+channel];
-        }
-    }
-}
-
 static void deinterlace_buffer(f32 *input, u32 frames, u32 in_channels, u32 out_channels, Array<float> *output) {
     u32 sample = 0;
     u32 frame = 0;
@@ -137,7 +103,6 @@ bool playback_update_capture_buffer(Playback_Buffer *buffer) {
     buffer->timestamp = g_capture.timestamp;
     buffer->sample_rate = g_stream.sample_rate;
     buffer->frame_count = g_capture.next[0].count + g_capture.prev[0].count;
-    buffer->channel_count = g_stream.channel_count;
     
     for (i32 i = 0; i < CAPTURE_CHANNELS; ++i) {
         buffer->data[i].clear();
@@ -157,15 +122,13 @@ bool get_playback_buffer_view(Playback_Buffer *buffer, i32 frame_count, Playback
     i32 delta_ms = (i32)perf_time_to_millis(perf_time_now() - buffer->timestamp);
     i32 first_frame;
     first_frame = delta_ms * (buffer->sample_rate/1000);
-    //first_frame -= frame_count;
     first_frame = MAX(first_frame, 0);
     frame_count = MIN(frame_count, buffer->frame_count - first_frame);
     if (frame_count < 0) return false;
     
     view->frame_count = frame_count;
-    view->channel_count = buffer->channel_count;
     
-    for (i32 i = 0; i < view->channel_count; ++i) {
+    for (i32 i = 0; i < CAPTURE_CHANNELS; ++i) {
         view->data[i] = &buffer->data[i].data[first_frame];
     }
     

@@ -7,6 +7,7 @@
 #define SG_BAND_COUNT 11
 #define PEAK_ROUGHNESS 0.015f
 #define SPECTRUM_ROUGHNESS 0.03f
+#define CAPTURE_CHANNELS PLAYBACK_CAPTURE_CHANNELS
 
 static int SG_BAND_OFFSETS[] = {
     0,
@@ -38,13 +39,12 @@ static Playback_Buffer g_buffer;
 static Playback_Metrics g_metrics;
 
 static void hann_window(Playback_Buffer_View *in, Playback_Buffer_View *out) {
-    f32 *out_data[MAX_AUDIO_CHANNELS];
+    f32 *out_data[CAPTURE_CHANNELS];
     const int n = in->frame_count;
 
     out->frame_count = in->frame_count;
-    out->channel_count = in->channel_count;
 
-    for (int channel = 0; channel < in->channel_count; ++channel) {
+    for (int channel = 0; channel < CAPTURE_CHANNELS; ++channel) {
         out_data[channel] = (f32 *)malloc(sizeof(f32) * in->frame_count);
         f32 *channel_data = out_data[channel];
         memcpy(channel_data, in->data[channel], n * sizeof(f32));
@@ -59,7 +59,7 @@ static void hann_window(Playback_Buffer_View *in, Playback_Buffer_View *out) {
 }
 
 static void free_windowed_view(Playback_Buffer_View *view) {
-    for (int i = 0; i < view->channel_count; ++i) {
+    for (int i = 0; i < CAPTURE_CHANNELS; ++i) {
        free((void*)view->data[i]);
     }
 }
@@ -120,10 +120,6 @@ static void calc_spectrum(Playback_Buffer_View *view, Spectrum *sg) {
         mag = log10f(mag);
         if (mag < 0.f) mag = 0.f;
 
-        //if (band == SG_BAND_COUNT - 1 || band == 0) {
-        //    log_debug("%d %g\n", freq, mag);
-        //}
-
         sg->peaks[band] = MAX(mag, sg->peaks[band]);
     }
 
@@ -149,26 +145,13 @@ void show_spectrum_ui() {
     f32 bar_width = region.x / SG_BAND_COUNT;
     const Spectrum &sg = g_metrics.spectrum;
 
-    static f32 max_detected = 0.f;
-
-    /*for (u32 i = 0; i < SG_BAND_COUNT; ++i) {
-        f32 s = sg.peaks[i] / 2.6f;
-        ImVec2 max = {cursor.x + (bar_width * (i+1)), cursor.y + region.y};
-        ImVec2 min = {max.x - bar_width + 1, cursor.y + region.y - (s * region.y)};
-        drawlist->AddRectFilled(min, max, ImGui::GetColorU32(ImGuiCol_PlotHistogram));
-
-        max_detected = MAX(sg.peaks[i], max_detected);
-    }*/
-
     ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
     ImGui::PlotHistogram("##spectrum", sg.peaks, SG_BAND_COUNT, 0, NULL, 0.f, 1.f, region);
     ImGui::PopStyleColor();
-
-    //ImGui::Text("Max: %g", max_detected);
 }
 
 void update_playback_analyzers(f32 delta_ms) {
-    u32 rounded_delta = ceilf(delta_ms);
+    u32 rounded_delta = (u32)ceilf(delta_ms);
     playback_update_capture_buffer(&g_buffer);
     
     Playback_Buffer_View windowed_view = {};
