@@ -135,7 +135,6 @@ bool get_playback_buffer_view(Playback_Buffer *buffer, i32 frame_count, Playback
     return true;
 }
 
-//@TODO: Some tracks have a click after the first buffer is filled, fix it
 void audio_stream_callback(void *user_data, f32 *output_buffer, const Audio_Buffer_Spec *spec) {
     lock_mutex(g_lock);
     defer(unlock_mutex(g_lock));

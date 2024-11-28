@@ -92,6 +92,8 @@ struct UI_State {
     ImGuiWindowFlags window_flags[WINDOW__COUNT];
     Window_Show_Fn *window_show_fn[WINDOW__COUNT];
     
+    bool want_to_create_playlist_from_selection;
+    
     bool ready;
     bool library_altered;
     bool shuffle_on;
@@ -514,11 +516,10 @@ static void show_user_playlists() {
     static char new_playlist_name[PLAYLIST_NAME_MAX];
     static char rename_playlist_name[PLAYLIST_NAME_MAX];
     static int rename_playlist_index;
-    if (ImGui::Button("+ New playlist")) {
+    if (ImGui::Button("+ New playlist") || ui.want_to_create_playlist_from_selection) {
         ImGui::OpenPopup("New playlist");
         memset(new_playlist_name, 0, sizeof(new_playlist_name));
     }
-    
     
     //-
     // Show popup to name a new playlist
@@ -540,6 +541,12 @@ static void show_user_playlists() {
                 Playlist new_playlist = {};
                 new_playlist.set_name(new_playlist_name);
                 
+                if (ui.want_to_create_playlist_from_selection) {
+                    ui.track_selection.copy_unique_to(new_playlist.tracks);
+                    ui.want_to_create_playlist_from_selection = false;
+                    new_playlist.sort();
+                }
+                
                 generate_temporary_file_name(PLAYLIST_DIRECTORY_W, save_path, sizeof(save_path));
                 save_playlist_to_file(new_playlist, save_path);
                 
@@ -554,6 +561,7 @@ static void show_user_playlists() {
         ImGui::SameLine();
         if (ImGui::Button("Cancel")) {
             status_line = NULL;
+            ui.want_to_create_playlist_from_selection = false;
             ImGui::CloseCurrentPopup();
         }
         
@@ -1104,8 +1112,11 @@ void show_track_context_menu(Playlist& from_playlist, u32 track_index) {
                 save_user_playlist(i);
             }
         }
-        else {
-            ImGui::TextDisabled("No playlists");
+        
+        if (ui.user_playlists.count) ImGui::Separator();
+        
+        if (ImGui::MenuItem("New playlist...")) {
+            ui.want_to_create_playlist_from_selection = true;
         }
         
         ImGui::EndMenu();
