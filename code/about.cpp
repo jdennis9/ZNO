@@ -84,4 +84,8 @@ void show_license_info() {
     ImGui::SeparatorText("bzip2");
     ImGui::TextUnformatted("Copyright (C) 1996-2019 Julian R Seward");
     ImGui::TextLinkOpenURL("https://sourceware.org/bzip2/");
+
+    ImGui::SeparatorText("KISS FFT");
+    ImGui::TextUnformatted("Copyright (c) 2003-2010 Mark Borgerding . All rights reserved.");
+    ImGui::TextLinkOpenURL("https://github.com/mborgerding/kissfft");
 }
