@@ -335,14 +335,14 @@ bool open_folder_multiselect_dialog(File_Type type, File_Iterator_Fn *iterator, 
 }
 
 bool for_each_file_in_folder(const wchar_t *path, File_Iterator_Fn *iterator, void *iterator_data) {
-    wchar_t path_buffer[PATH_LENGTH];
-    _snwprintf(path_buffer, PATH_LENGTH, L"%s\\*", path);
+    wchar_t path_buffer[PATH_LENGTH] = {};
+    _snwprintf(path_buffer, PATH_LENGTH-1, L"%s\\*", path);
     
     WIN32_FIND_DATAW find_data;
     HANDLE find_handle;
     
     find_handle = FindFirstFileW(path_buffer, &find_data);
-    if (!find_handle) return false;
+    if (find_handle == INVALID_HANDLE_VALUE) return false;
     
     defer(FindClose(find_handle));
     
