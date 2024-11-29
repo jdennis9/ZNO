@@ -55,6 +55,7 @@ struct File_Drag_Drop_Payload {
 
 void notify(int message);
 void capture_next_input_and_bind_to_hotkey(int hotkey);
+f32 get_dpi_scale();
 
 const File_Drag_Drop_Payload& get_file_drag_drop_payload();
 bool is_hotkey_being_captured(int hotkey);

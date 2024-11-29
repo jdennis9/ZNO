@@ -100,6 +100,11 @@ struct UI_State {
     bool show_prefs;
     bool show_hotkeys;
     bool show_about_window;
+    
+    // Super small font, currently used by spectrum analyzer to
+    // denote band frequencies
+    ImFontAtlas mini_font_atlas;
+    ImFont *mini_font;
 };
 
 static UI_State ui;
@@ -218,6 +223,14 @@ int is_window_open(int window) {
 
 void set_window_showing(int window, bool showing) {
     ui.show_window[window] = showing;
+}
+
+void ui_push_mini_font() {
+    if (ui.mini_font) ImGui::PushFont(ui.mini_font);
+}
+
+void ui_pop_mini_font() {
+    if (ui.mini_font) ImGui::PopFont();
 }
 
 static void bring_window_to_front(int window) {
@@ -1088,6 +1101,33 @@ void init_ui() {
     atexit(&save_all_state);
     
     set_default_theme();
+    
+    // Load mini font
+    {
+        f32 scaled_size = get_dpi_scale() * 12.f;
+        ImFontConfig cfg = ImFontConfig();
+        
+        ui.mini_font = ui.mini_font_atlas.AddFontFromFileTTF("C:\\Windows\\Fonts\\seguisb.ttf", scaled_size, &cfg);
+        ui.mini_font_atlas.Build();
+        
+        u8 *tex_data;
+        int tex_width, tex_height;
+        
+        ui.mini_font_atlas.GetTexDataAsRGBA32(&tex_data, &tex_width, &tex_height);
+        
+        Image img = {};
+        img.data = tex_data;
+        img.format = IMAGE_FORMAT_R8G8B8A8;
+        img.width = tex_width;
+        img.height = tex_height;
+        
+        Texture *texture = create_texture_from_image(&img);
+        
+        log_debug("Created mini font atlas: %dx%d\n", tex_width, tex_height);
+        
+        ui.mini_font_atlas.SetTexID((ImTextureID)texture);
+        ui.mini_font_atlas.ClearTexData();
+    }
     
     ui.ready = true;
     STOP_TIMER(init_ui);

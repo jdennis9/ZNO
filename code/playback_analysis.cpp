@@ -3,6 +3,7 @@
 #include <kissfft/kiss_fftr.h>
 #include "playback_analysis.h"
 #include "playback.h"
+#include "ui.h"
 
 #define SG_BAND_COUNT 11
 #define PEAK_ROUGHNESS 0.015f
@@ -138,7 +139,35 @@ void show_spectrum_widget(const char *str_id, float width) {
 
 void show_spectrum_ui() {
     g_metrics.need_update_spectrum = true;
-
+    ImGuiTableFlags table_flags = ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV;
+    
+    // First, show the frequency cut-offs
+    if (ImGui::BeginTable("##frequencies", SG_BAND_COUNT, table_flags)) {
+        f32 col_weight = 1.f / (f32)SG_BAND_COUNT;
+        for (u32 i = 0; i < SG_BAND_COUNT; ++i) {
+            char col_name[4] = {};
+            snprintf(col_name, 3, "%u", i);
+            ImGui::TableSetupColumn(col_name, 0, col_weight);
+        }
+        
+        ImGui::TableNextRow();
+        
+        ui_push_mini_font();
+        for (u32 i = 0; i < SG_BAND_COUNT; ++i) {
+            char col_text[8] = {};
+            int freq = SG_BAND_OFFSETS[i + 1];
+            
+            ImGui::TableSetColumnIndex(i);
+            
+            if (freq < 1000) snprintf(col_text, 7, "%d", freq);
+            else snprintf(col_text, 7, "%.1fK", (f32)freq / 1000.f);
+            ImGui::TextUnformatted(col_text);
+        }
+        ui_pop_mini_font();
+        
+        ImGui::EndTable();
+    }
+    
     ImDrawList *drawlist = ImGui::GetWindowDrawList();
     ImVec2 cursor = ImGui::GetCursorScreenPos();
     ImVec2 region = ImGui::GetContentRegionAvail();

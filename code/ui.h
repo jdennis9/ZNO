@@ -26,6 +26,8 @@ void show_ui();
 void ui_play_next_track();
 void ui_play_previous_track();
 Track ui_get_playing_track();
+void ui_push_mini_font();
+void ui_pop_mini_font();
 
 #endif //UI_H
 

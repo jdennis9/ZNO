@@ -39,9 +39,6 @@
 #include <d3d10.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx10.h>
-#include <atlbase.h>
-#include <atlwin.h>
-#include <wmp.h>
 #include <stb_image.h>
 
 #include "drag_drop.h"
@@ -398,6 +395,10 @@ static void apply_hotkeys() {
 
 void notify(int message) {
     PostMessageW(g_hwnd, WM_USER+message, 0, 0);
+}
+
+f32 get_dpi_scale() {
+    return g_window.dpi_scale;
 }
 
 static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -758,75 +759,55 @@ void free_image(Image *image) {
     if (image->data) stbi_image_free(image->data);
 }
 
+static DXGI_FORMAT image_format_to_dxgi(int format) {
+    switch (format) {
+        case IMAGE_FORMAT_R8G8B8A8: return DXGI_FORMAT_R8G8B8A8_UNORM;
+    }
+    
+    ASSERT(false && "Unknown image format");
+    return DXGI_FORMAT_UNKNOWN;
+}
+
+static int image_format_bytes_per_pixel(int format) {
+    switch (format) {
+        case IMAGE_FORMAT_R8G8B8A8: return 4;
+    }
+    
+    ASSERT(false && "Unknown image format");
+    return 0;
+}
+
 Texture *create_texture_from_image(Image *image) {
-    // Staging texture where we write the image data to
-    ID3D10Texture2D *texture = NULL;
-    // Staging texture gets copied to this texture and
-    // a shader resource view for this is returned
-    ID3D10Texture2D *dst_texture = NULL;
-	ID3D10ShaderResourceView *view = NULL;
+    ID3D10ShaderResourceView *view;
+    ID3D10Texture2D *texture;
     
-    // We use a separate texture for writing the image data
-    // because that texture must be stored on CPU which is both
-    // very slow and memory consuming. dst_texture is stored on the GPU
-    
-	D3D10_TEXTURE2D_DESC desc = {};
+    D3D10_TEXTURE2D_DESC desc = {};
 	desc.Width = image->width;
 	desc.Height = image->height;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	desc.Format = image_format_to_dxgi(image->format);
 	desc.SampleDesc.Count = 1;
-	desc.Usage = D3D10_USAGE_DYNAMIC;
+	desc.Usage = D3D10_USAGE_DEFAULT;
 	desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
     
-    // Create staging texture
-	d3d.device->CreateTexture2D(&desc, NULL, &texture);
+    D3D10_SUBRESOURCE_DATA data = {};
+    data.pSysMem = image->data;
+    data.SysMemPitch = image->width * image_format_bytes_per_pixel(image->format);
+    
+	d3d.device->CreateTexture2D(&desc, &data, &texture);
 	if (!texture) {
 		return NULL;
 	}
     defer(texture->Release());
     
-    // Create texture used in shader
-	desc.Usage = D3D10_USAGE_DEFAULT;
-	desc.CPUAccessFlags = 0;
-	d3d.device->CreateTexture2D(&desc, NULL, &dst_texture);
-    if (!dst_texture) {
-        return NULL;
-    }
-    defer(dst_texture->Release());
-    
-	D3D10_MAPPED_TEXTURE2D mapped;
-	texture->Map(D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &mapped);
-	
-	u8 *out = (u8*)mapped.pData;
-	u8 *in = image->data;
-    
-	for (i32 row = 0; row < image->height; ++row) {
-		i32 row_offset = row * mapped.RowPitch;
-		for (i32 col = 0; col < image->width; ++col) {
-			i32 col_offset = col * 4;
-			out[row_offset+col_offset+0] = in[0];
-			out[row_offset+col_offset+1] = in[1];
-			out[row_offset+col_offset+2] = in[2];
-			out[row_offset+col_offset+3] = in[3];
-            
-			in += 4;
-		}
-	}
-	
-	texture->Unmap(D3D10CalcSubresource(0, 0, 1));
-    
-    d3d.device->CopyResource(dst_texture, texture);
-    
-	D3D10_SHADER_RESOURCE_VIEW_DESC sr = {};
+    D3D10_SHADER_RESOURCE_VIEW_DESC sr = {};
 	sr.Format = desc.Format;
 	sr.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
 	sr.Texture2D.MipLevels = 1;
-	d3d.device->CreateShaderResourceView(dst_texture, &sr, &view);
-	
-	return view;
+	d3d.device->CreateShaderResourceView(texture, &sr, &view);
+    
+    return view;
 }
 
 void destroy_texture(Texture **texture) {
