@@ -38,7 +38,6 @@
 #include <imgui.h>
 #include <d3d10.h>
 #include <backends/imgui_impl_win32.h>
-#include <backends/imgui_impl_dx10.h>
 #include <stb_image.h>
 
 #include "drag_drop.h"
@@ -63,12 +62,6 @@ struct Main_Flags {
     bool reload_font;
 };
 
-struct D3D {
-    ID3D10Device *device;
-    IDXGISwapChain *swapchain;
-    ID3D10RenderTargetView *render_target;
-};
-
 struct Background {
     char path[512];
     Texture *texture;
@@ -83,7 +76,6 @@ struct Hotkey {
 static HWND g_hwnd;
 static Window g_window;
 static Main_Flags g_flags;
-static D3D d3d;
 static Background g_background;
 static Hotkey g_hotkeys[HOTKEY__COUNT];
 static bool g_hotkey_is_bound[HOTKEY__COUNT];
@@ -102,17 +94,12 @@ static bool g_drag_drop_done;
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-static bool create_d3d_device();
-static void resize_swapchain();
-static void render_frame();
 static void load_font(const char *path, int size, int icon_size, float dpi_scale);
-static bool is_window_visible();
 static void set_background_image(const char *path);
+static void render_background();
 static bool is_key_down(int vk) {return (GetKeyState(vk) * 0x8000) != 0;}
 static void load_hotkeys();
 static void apply_hotkeys();
-static void save_preferences();
-static void load_preferences();
 static void create_tray_icon();
 static void remove_tray_icon();
 static void update_background();
@@ -181,11 +168,11 @@ int main(int argc, char *argv[])
     //-
     // Initialize DirectX and ImGui
     START_TIMER(init_video, "Initialize DirectX10 and ImGui");
-    create_d3d_device();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
-    ImGui_ImplWin32_Init(g_hwnd);
-    ImGui_ImplDX10_Init(d3d.device);
+    video_init(g_hwnd);
+    video_init_imgui(g_hwnd);
+    defer(video_deinit());
     STOP_TIMER(init_video);
     //-
     
@@ -221,8 +208,6 @@ int main(int argc, char *argv[])
     
     ShowWindow(g_hwnd, SW_NORMAL);
 
-
-    
     bool running = true;
     while (running) {
         MSG msg;
@@ -259,45 +244,46 @@ int main(int argc, char *argv[])
         if (g_window.is_obscured) Sleep(20);
         
         // Resize window
-        if (g_window.resize_width != 0) resize_swapchain();
+        if (g_window.resize_width != 0) {
+            video_resize_window(g_window.resize_width, g_window.resize_height);
+            g_window.resize_width = g_window.resize_height = 0;
+        }
         
         // Load font and background if changed
         update_font();
         update_background();
         
         // Update UI
-        ImGui_ImplDX10_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
+        if (video_begin_frame()) {
+            ImGui::NewFrame();
         
-        // This needs to be called within ImGui::NewFrame
-        if (g_have_drag_drop_payload) {
-            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceExtern)) {
-                ImGui::SetDragDropPayload("FILES", NULL, 0);
-                ImGui::SetTooltip("Drop files here");
-                ImGui::EndDragDropSource();
+            // This needs to be called within the ImGui frame
+            if (g_have_drag_drop_payload) {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceExtern)) {
+                    ImGui::SetDragDropPayload("FILES", NULL, 0);
+                    ImGui::SetTooltip("Drop files here");
+                    ImGui::EndDragDropSource();
+                }
             }
+        
+            show_ui();
+            ImGui::EndFrame();
+        
+            if (g_drag_drop_done) {
+                clear_file_drag_drop_payload();
+                g_drag_drop_done = false;
+            }
+        
+            render_background();
+            ImGui::Render();
+            video_end_frame();
         }
-        
-        show_ui();
-        ImGui::EndFrame();
-        
-        if (g_drag_drop_done) {
-            clear_file_drag_drop_payload();
-            g_drag_drop_done = false;
-        }
-        
-        render_frame();
     }
-    
-    ImGui_ImplWin32_Shutdown();
-    ImGui_ImplDX10_Shutdown();
     
     g_prefs.save_to_file(PREFS_PATH);
     remove_tray_icon();
     save_metadata_cache(METADATA_CACHE_PATH);
     destroy_texture(&g_background.texture);
-    d3d.device->Release();
     
 	return 0;
 }
@@ -549,69 +535,7 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 	return DefWindowProcW(hWnd, msg, wParam, lParam);
 }
 
-static void create_render_target() {
-	ID3D10Texture2D *texture;
-	d3d.swapchain->GetBuffer(0, IID_PPV_ARGS(&texture));
-	d3d.device->CreateRenderTargetView(texture, NULL, &d3d.render_target);
-	texture->Release();
-}
-
-static void destroy_render_target() {
-	if (d3d.render_target) {
-		d3d.render_target->Release();
-		d3d.render_target = NULL;
-	}
-}
-
-static void resize_swapchain() {
-    destroy_render_target();
-    d3d.swapchain->ResizeBuffers(1, g_window.resize_width, g_window.resize_height, DXGI_FORMAT_UNKNOWN, 0);
-    g_window.resize_width = g_window.resize_height = 0;
-    create_render_target();
-}
-
-static bool create_d3d_device() {
-    DXGI_SWAP_CHAIN_DESC swapchain = {};
-	swapchain.BufferCount = 2;
-	swapchain.BufferDesc.Width = 0;
-	swapchain.BufferDesc.Height = 0;
-	swapchain.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	swapchain.BufferDesc.RefreshRate.Numerator = 144;
-	swapchain.BufferDesc.RefreshRate.Denominator = 1;
-	swapchain.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-	swapchain.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapchain.OutputWindow = g_hwnd;
-	swapchain.SampleDesc.Count = 1;
-	swapchain.SampleDesc.Quality = 0;
-	swapchain.Windowed = TRUE;
-	swapchain.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-    
-	int flags = 0;
-#ifndef NDEBUG
-	flags |= D3D10_CREATE_DEVICE_DEBUG;
-#endif
-    
-	HRESULT result = D3D10CreateDeviceAndSwapChain(NULL, D3D10_DRIVER_TYPE_HARDWARE, NULL,
-                                                   flags, D3D10_SDK_VERSION,
-                                                   &swapchain, &d3d.swapchain, &d3d.device);
-    
-	if (result == DXGI_ERROR_UNSUPPORTED) {
-		result = D3D10CreateDeviceAndSwapChain(NULL, D3D10_DRIVER_TYPE_HARDWARE, NULL,
-                                               flags, D3D10_SDK_VERSION,
-                                               &swapchain, &d3d.swapchain, &d3d.device);
-	}
-    
-	if (result != S_OK) {
-		show_message_box(MESSAGE_BOX_TYPE_ERROR, "Device does not support DirectX10");
-		return false;
-	}
-    
-	create_render_target();
-    
-	return true;
-}
-
-static void render_frame() {
+static void render_background() {
     // Render background
     if (g_background.texture) {
         ImDrawList *drawlist = ImGui::GetBackgroundDrawList(ImGui::GetMainViewport());
@@ -638,23 +562,7 @@ static void render_frame() {
         
         drawlist->AddImage(g_background.texture, min, max, ImVec2(0, 0), ImVec2(1, 1));
     }
-    
-    // Finish ImGui frame
-	ImGui::Render();
-    
-    // Clear buffer
-	const float clear_color[4] = {0.f, 0.f, 0.f, 1.f};
-	d3d.device->OMSetRenderTargets(1, &d3d.render_target, NULL);
-	d3d.device->ClearRenderTargetView(d3d.render_target, clear_color);
-    
-    // Render ImGui state
-	ImDrawData *draw_data = ImGui::GetDrawData();
-	if (draw_data) {
-		ImGui_ImplDX10_RenderDrawData(draw_data);
-	}
-    
-    // Present
-	g_window.is_obscured = d3d.swapchain->Present(1, 0) == DXGI_STATUS_OCCLUDED;
+
 }
 
 static void set_background_image(const char *path) {
@@ -694,7 +602,8 @@ static void load_font(const char *path, int size, int icon_size, float scale) {
     float scaled_icon_size = MAX(icon_size*scale, 8.f);
     
 	cfg.RasterizerDensity = scale;
-	ImGui_ImplDX10_InvalidateDeviceObjects();
+
+    video_invalidate_imgui_objects();
 	
 	io.Fonts->Clear();
 	
@@ -719,7 +628,7 @@ static void load_font(const char *path, int size, int icon_size, float scale) {
     io.Fonts->AddFontFromMemoryTTF(FONT_AWESOME_OTF, FONT_AWESOME_OTF_SIZE,
                                    scaled_icon_size, &cfg, icon_ranges);
     
-	ImGui_ImplDX10_CreateDeviceObjects();
+    video_create_imgui_objects();
 }
 
 static void update_background() {
@@ -757,62 +666,6 @@ bool load_image_from_memory(const void *data, u32 data_size, Image *image) {
 
 void free_image(Image *image) {
     if (image->data) stbi_image_free(image->data);
-}
-
-static DXGI_FORMAT image_format_to_dxgi(int format) {
-    switch (format) {
-        case IMAGE_FORMAT_R8G8B8A8: return DXGI_FORMAT_R8G8B8A8_UNORM;
-    }
-    
-    ASSERT(false && "Unknown image format");
-    return DXGI_FORMAT_UNKNOWN;
-}
-
-static int image_format_bytes_per_pixel(int format) {
-    switch (format) {
-        case IMAGE_FORMAT_R8G8B8A8: return 4;
-    }
-    
-    ASSERT(false && "Unknown image format");
-    return 0;
-}
-
-Texture *create_texture_from_image(Image *image) {
-    ID3D10ShaderResourceView *view;
-    ID3D10Texture2D *texture;
-    
-    D3D10_TEXTURE2D_DESC desc = {};
-	desc.Width = image->width;
-	desc.Height = image->height;
-	desc.MipLevels = 1;
-	desc.ArraySize = 1;
-	desc.Format = image_format_to_dxgi(image->format);
-	desc.SampleDesc.Count = 1;
-	desc.Usage = D3D10_USAGE_DEFAULT;
-	desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
-    
-    D3D10_SUBRESOURCE_DATA data = {};
-    data.pSysMem = image->data;
-    data.SysMemPitch = image->width * image_format_bytes_per_pixel(image->format);
-    
-	d3d.device->CreateTexture2D(&desc, &data, &texture);
-	if (!texture) {
-		return NULL;
-	}
-    defer(texture->Release());
-    
-    D3D10_SHADER_RESOURCE_VIEW_DESC sr = {};
-	sr.Format = desc.Format;
-	sr.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
-	sr.Texture2D.MipLevels = 1;
-	d3d.device->CreateShaderResourceView(texture, &sr, &view);
-    
-    return view;
-}
-
-void destroy_texture(Texture **texture) {
-    if (*texture) ((ID3D10ShaderResourceView*)*texture)->Release();
-    *texture = NULL;
 }
 
 bool get_hotkey_bind_string(int index, char *buffer, int buffer_size) {

@@ -458,36 +458,6 @@ static void load_theme_from_file(const wchar_t *path) {
 }
 
 static void show_theme_editor() {
-    /*ImGuiStyle& style = ImGui::GetStyle();
-    
-    if (ImGui::Button("Export")) {
-        wchar_t path[PATH_LENGTH];
-        // Write the theme to an INI file
-        if (open_file_save_dialog(FILE_TYPE_INI, path, PATH_LENGTH)) {
-            FILE *f = _wfopen(path, L"w");
-            if (f) {
-                fprintf(f, "[ImGui]\n");
-                for (u32 i = 0; i < ImGuiCol_COUNT; ++i) {
-                    fprintf(f, "%s = %x\n", ImGui::GetStyleColorName(i),
-                            ImGui::GetColorU32(style.Colors[i]));
-                }
-                fclose(f);
-            }
-        }
-    }
-    
-    ImGui::SameLine();
-    if (ImGui::Button("Import")) {
-        wchar_t path[PATH_LENGTH];
-        if (open_file_select_dialog(FILE_TYPE_INI, path, PATH_LENGTH)) {
-            load_theme_from_file(path);
-        }
-    }
-    
-    for (u32 i = 0; i < ImGuiCol_COUNT; ++i) {
-        ImGui::ColorEdit4(ImGui::GetStyleColorName(i), &style.Colors[i].x);
-    }*/
-    
     bool dirty = show_theme_editor_gui();
     if (dirty) {
         ui.window_flags[WINDOW_THEME_EDITOR] |= ImGuiWindowFlags_UnsavedDocument;
