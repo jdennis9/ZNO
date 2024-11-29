@@ -3,13 +3,13 @@ cmake_policy(SET CMP0091 NEW)
 project(main)
 
 file(GLOB sources code/*.h code/*.cpp code/resources.rc code/thirdparty/*.cpp code/thirdparty/*.c imgui/*.cpp imgui/*.h 
-	imgui/backends/imgui_impl_dx10.* imgui/backends/imgui_impl_win32.* imgui/misc/freetype/imgui_freetype.*)
+	imgui/backends/imgui_impl_dx11.* imgui/backends/imgui_impl_win32.* imgui/misc/freetype/imgui_freetype.*)
 
 add_executable(main ${sources})
 #add_compile_definitions("$<$<CONFIG:RelWithDebInfo>:DEF_WIN_MAIN>")
 add_compile_definitions("$<$<CONFIG:Release>:DEF_WIN_MAIN>")
 target_include_directories(main PRIVATE code/thirdparty imgui)
-target_link_libraries(main PRIVATE winmm comdlg32 ole32 d3d10 shlwapi)
+target_link_libraries(main PRIVATE winmm comdlg32 ole32 d3d11 shlwapi)
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS IMGUI_ENABLE_FREETYPE)
 
 set_target_properties(main PROPERTIES

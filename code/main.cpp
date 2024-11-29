@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 
     //-
     // Initialize DirectX and ImGui
-    START_TIMER(init_video, "Initialize DirectX10 and ImGui");
+    START_TIMER(init_video, "Initialize DirectX and ImGui");
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
     video_init(g_hwnd);

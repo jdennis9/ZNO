@@ -1,14 +1,15 @@
-#include <d3d10.h>
+#include <d3d11.h>
 #include <dxgi.h>
 #include <backends/imgui_impl_win32.h>
-#include <backends/imgui_impl_dx10.h>
+#include <backends/imgui_impl_dx11.h>
 #include "defines.h"
 #include "platform.h"
 #include "video.h"
 
-static ID3D10Device *g_device;
+static ID3D11Device *g_device;
+static ID3D11DeviceContext *g_context;
 static IDXGISwapChain *g_swapchain;
-static ID3D10RenderTargetView *g_render_target;
+static ID3D11RenderTargetView *g_render_target;
 static bool g_window_is_obscured;
 
 static void create_window_render_target();
@@ -32,12 +33,19 @@ bool video_init(void *hwnd) {
 
 	int flags = 0;
 #ifndef NDEBUG
-	flags |= D3D10_CREATE_DEVICE_DEBUG;
+	flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-	HRESULT result = D3D10CreateDeviceAndSwapChain(NULL, D3D10_DRIVER_TYPE_HARDWARE, NULL,
-		flags, D3D10_SDK_VERSION,
-		&swapchain, &g_swapchain, &g_device);
+	D3D_FEATURE_LEVEL feature_levels[] = {
+		D3D_FEATURE_LEVEL_11_1,
+		D3D_FEATURE_LEVEL_11_0,
+	};
+
+	D3D_FEATURE_LEVEL feature_level;
+
+	HRESULT result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
+		flags, feature_levels, LENGTH_OF_ARRAY(feature_levels), D3D11_SDK_VERSION,
+		&swapchain, &g_swapchain, &g_device, &feature_level, &g_context);
 
 	if (result != S_OK) {
 		show_message_box(MESSAGE_BOX_TYPE_ERROR, "Graphics device does not support DirectX10");
@@ -51,12 +59,12 @@ bool video_init(void *hwnd) {
 
 void video_init_imgui(void *hwnd) {
 	ImGui_ImplWin32_Init(hwnd);
-	ImGui_ImplDX10_Init(g_device);
+	ImGui_ImplDX11_Init(g_device, g_context);
 }
 
 void video_deinit() {
 	ImGui_ImplWin32_Shutdown();
-	ImGui_ImplDX10_Shutdown();
+	ImGui_ImplDX11_Shutdown();
 
 	destroy_window_render_target();
 	if (g_swapchain) g_swapchain->Release();
@@ -64,20 +72,20 @@ void video_deinit() {
 }
 
 void video_invalidate_imgui_objects() {
-	ImGui_ImplDX10_InvalidateDeviceObjects();
+	ImGui_ImplDX11_InvalidateDeviceObjects();
 }
 
 void video_create_imgui_objects() {
-	ImGui_ImplDX10_CreateDeviceObjects();
+	ImGui_ImplDX11_CreateDeviceObjects();
 }
 
 bool video_begin_frame() {
 	// Clear buffer
 	const float clear_color[4] = {0.f, 0.f, 0.f, 1.f};
-	g_device->OMSetRenderTargets(1, &g_render_target, NULL);
-	g_device->ClearRenderTargetView(g_render_target, clear_color);
+	g_context->OMSetRenderTargets(1, &g_render_target, NULL);
+	g_context->ClearRenderTargetView(g_render_target, clear_color);
 
-	ImGui_ImplDX10_NewFrame();
+	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 
 	return true;
@@ -87,7 +95,7 @@ bool video_end_frame() {
 	// Render ImGui state
 	ImDrawData *draw_data = ImGui::GetDrawData();
 	if (draw_data) {
-		ImGui_ImplDX10_RenderDrawData(draw_data);
+		ImGui_ImplDX11_RenderDrawData(draw_data);
 	}
 
 	// Present
@@ -119,32 +127,30 @@ static int image_format_bytes_per_pixel(int format) {
 }
 
 Texture *create_texture_from_image(Image *image) {
-	ID3D10ShaderResourceView *view;
-	ID3D10Texture2D *texture;
+	ID3D11ShaderResourceView *view;
+	ID3D11Texture2D *texture;
 
-	D3D10_TEXTURE2D_DESC desc = {};
+	D3D11_TEXTURE2D_DESC desc = {};
 	desc.Width = image->width;
 	desc.Height = image->height;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
 	desc.Format = image_format_to_dxgi(image->format);
 	desc.SampleDesc.Count = 1;
-	desc.Usage = D3D10_USAGE_IMMUTABLE;
-	desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
+	desc.Usage = D3D11_USAGE_IMMUTABLE;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-	D3D10_SUBRESOURCE_DATA data = {};
+	D3D11_SUBRESOURCE_DATA data = {};
 	data.pSysMem = image->data;
 	data.SysMemPitch = image->width * image_format_bytes_per_pixel(image->format);
 
 	g_device->CreateTexture2D(&desc, &data, &texture);
-	if (!texture) {
-		return NULL;
-	}
+	if (!texture) return NULL;
 	defer(texture->Release());
 
-	D3D10_SHADER_RESOURCE_VIEW_DESC sr = {};
+	D3D11_SHADER_RESOURCE_VIEW_DESC sr = {};
 	sr.Format = desc.Format;
-	sr.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+	sr.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	sr.Texture2D.MipLevels = 1;
 	g_device->CreateShaderResourceView(texture, &sr, &view);
 
@@ -152,12 +158,12 @@ Texture *create_texture_from_image(Image *image) {
 }
 
 void destroy_texture(Texture **texture) {
-	if (*texture) ((ID3D10ShaderResourceView*)*texture)->Release();
+	if (*texture) ((ID3D11ShaderResourceView*)*texture)->Release();
 	*texture = NULL;
 }
 
 static void create_window_render_target() {
-	ID3D10Texture2D *texture;
+	ID3D11Texture2D *texture;
 	g_swapchain->GetBuffer(0, IID_PPV_ARGS(&texture));
 	if (!texture) return;
 	g_device->CreateRenderTargetView(texture, NULL, &g_render_target);
