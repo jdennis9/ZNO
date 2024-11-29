@@ -337,36 +337,52 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
 
 void show_detailed_metadata_table(const char *str_id, const Detailed_Metadata& metadata, Texture *cover_art) {
     ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
+    const float cover_size = ImGui::GetContentRegionAvail().x;
+
+    if (cover_art) {
+        //@TODO: Come up with some sizing rules for cover art
+        ImGui::Image(cover_art, ImVec2(cover_size, cover_size));
+    }
+    else {
+        ImGui::Dummy(ImVec2(cover_size, cover_size));
+    }
+
     if (ImGui::BeginTable(str_id, 2, table_flags)) {
         ImGui::TableSetupColumn("##type", ImGuiTableColumnFlags_WidthStretch, 0.3f);
         ImGui::TableSetupColumn("##value", ImGuiTableColumnFlags_WidthStretch, 0.7f);
         
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Artist");
-        ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(metadata.artist);
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Album");
-        ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(metadata.album);
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Title");
-        ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(metadata.title);
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Genre");
-        ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(metadata.genre);
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Track Number");
-        ImGui::TableSetColumnIndex(1); ImGui::Text("%u", metadata.track_number);
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Year");
-        ImGui::TableSetColumnIndex(1); ImGui::Text("%u", metadata.year);
+        if (metadata.album[0]) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Album");
+            ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(metadata.album);
+        }
+        if (metadata.artist[0]) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Artist");
+            ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(metadata.artist);
+        }
+        if (metadata.artist[0]) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Title");
+            ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(metadata.title);
+        }
+        if (metadata.genre[0]) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Genre");
+            ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(metadata.genre);
+        }
+        if (metadata.track_number != 0) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Track Number");
+            ImGui::TableSetColumnIndex(1); ImGui::Text("%u", metadata.track_number);
+        }
+        if (metadata.year != 0) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted("Year");
+            ImGui::TableSetColumnIndex(1); ImGui::Text("%u", metadata.year);
+        }
         
         ImGui::EndTable();
-    }
-    
-    if (cover_art) {
-        //@TODO: Come up with some sizing rules for cover art
-        const float size = ImGui::GetContentRegionAvail().x;
-        ImGui::Image(cover_art, ImVec2(size, size));
     }
     
     if (metadata.comment[0]) {
