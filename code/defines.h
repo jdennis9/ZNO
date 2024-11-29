@@ -99,22 +99,9 @@ static INLINE void swap(T& a, T& b) {
 
 template<typename T>
 static INLINE i32 linear_search(T const *haystack, u32 count, T const& needle) {
-    /*for (u32 i = 0; i < count; ++i) {
+    for (u32 i = 0; i < count; ++i) {
         if (haystack[i] == needle) return i;
     }
-    
-    return -1;*/
-    
-    if (count == 0) return -1;
-    else if (count == 1 && haystack[0] == needle) return 0;
-    u32 h = count/2;
-    
-    for (u32 i = 0; i <= h; ++i) {
-        if (haystack[i] == needle) return i;
-        else if (haystack[i+h] == needle) return i+h;
-    }
-    
-    if ((count % 2) && (haystack[count-1] == needle)) return count-1;
     
     return -1;
 }
