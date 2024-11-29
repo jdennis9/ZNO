@@ -1104,7 +1104,7 @@ void init_ui() {
     
     // Load mini font
     {
-        f32 scaled_size = get_dpi_scale() * 12.f;
+        f32 scaled_size = get_dpi_scale() * 9.f;
         ImFontConfig cfg = ImFontConfig();
         
         ui.mini_font = ui.mini_font_atlas.AddFontFromFileTTF("C:\\Windows\\Fonts\\seguisb.ttf", scaled_size, &cfg);

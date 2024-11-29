@@ -5,7 +5,7 @@
 #include "playback.h"
 #include "ui.h"
 
-#define SG_BAND_COUNT 11
+#define SG_BAND_COUNT 20
 #define PEAK_ROUGHNESS 0.015f
 #define SPECTRUM_ROUGHNESS 0.03f
 #define CAPTURE_CHANNELS PLAYBACK_CAPTURE_CHANNELS
@@ -13,15 +13,24 @@
 static int SG_BAND_OFFSETS[] = {
     0,
     50,
+    70,
     100,
-    150,
+    130,
+    180,
     250,
-    500,
-    800,
+    330,
+    450,
+    620,
+    850,
     1200,
-    2000,
-    4000,
-    6000,
+    1600,
+    2200,
+    3000,
+    4100,
+    5600,
+    7700,
+    11000,
+    14000,
     20000,
 };
 
@@ -139,7 +148,8 @@ void show_spectrum_widget(const char *str_id, float width) {
 
 void show_spectrum_ui() {
     g_metrics.need_update_spectrum = true;
-    ImGuiTableFlags table_flags = ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV;
+    ImGuiTableFlags table_flags = ImGuiTableFlags_SizingStretchProp |
+        ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersInnerV;
     
     // First, show the frequency cut-offs
     if (ImGui::BeginTable("##frequencies", SG_BAND_COUNT, table_flags)) {
@@ -175,7 +185,9 @@ void show_spectrum_ui() {
     const Spectrum &sg = g_metrics.spectrum;
 
     ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
     ImGui::PlotHistogram("##spectrum", sg.peaks, SG_BAND_COUNT, 0, NULL, 0.f, 1.f, region);
+    ImGui::PopStyleVar();
     ImGui::PopStyleColor();
 }
 
