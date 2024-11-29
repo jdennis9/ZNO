@@ -1,7 +1,7 @@
 ### ZNO Music Player
 Lightweight music player for Windows using ImGui. Inspired by Foobar2000.
 
-### Screenhots
+### Screenshots
 ![Preview1](./media/screenshot-1.png)
 ![Preview2](./media/screenshot-2.png)
 
