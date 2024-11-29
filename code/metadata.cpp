@@ -125,7 +125,7 @@ bool read_detailed_file_metadata(const wchar_t *path, Detailed_Metadata *md, Ima
             if (genre) strncpy0(md->genre, genre, sizeof(md->genre));
             if (comment) strncpy0(md->comment, comment, sizeof(md->comment));
             md->year = taglib_tag_year(tag);
-            md->track_number = taglib_tag_year(tag);
+            md->track_number = taglib_tag_track(tag);
             
             return true;
         }
