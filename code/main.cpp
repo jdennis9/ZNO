@@ -503,24 +503,24 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             return 0;
         }
 
-        case WM_USER+NOTIFY_PAUSE: {
+        case WM_USER+NOTIFY_REQUEST_PAUSE: {
             playback_set_paused(true);
             update_media_controls_state();
             return 0;
         }
 
-        case WM_USER+NOTIFY_PLAY: {
+        case WM_USER+NOTIFY_REQUEST_PLAY: {
             playback_set_paused(false);
             update_media_controls_state();
             return 0;
         }
 
-        case WM_USER+NOTIFY_PREV_TRACK: {
+        case WM_USER+NOTIFY_REQUEST_PREV_TRACK: {
             ui_play_previous_track();
             return 0;
         }
 
-        case WM_USER+NOTIFY_NEXT_TRACK: {
+        case WM_USER+NOTIFY_REQUEST_NEXT_TRACK: {
             ui_play_next_track();
             return 0;
         }

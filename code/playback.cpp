@@ -146,7 +146,7 @@ void audio_stream_callback(void *user_data, f32 *output_buffer, const Audio_Buff
     
     Decoder *dec = (Decoder*)user_data;
     Decode_Status status = decoder_decode(dec, output_buffer, spec->frame_count, spec->channel_count, spec->sample_rate);
-    if (status == DECODE_STATUS_EOF) notify(NOTIFY_NEXT_TRACK);
+    if (status == DECODE_STATUS_EOF) notify(NOTIFY_REQUEST_NEXT_TRACK);
     
     if (g_capture.next[0].count > 0) {
         for (i32 i = 0; i < CAPTURE_CHANNELS; ++i) {
@@ -193,7 +193,7 @@ bool playback_load_file(const wchar_t *path) {
     defer(unlock_mutex(g_lock));
     
     if (!decoder_open(&g_decoder, path)) {
-        notify(NOTIFY_NEXT_TRACK);
+        notify(NOTIFY_REQUEST_NEXT_TRACK);
         return false;
     }
     

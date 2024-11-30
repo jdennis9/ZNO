@@ -18,16 +18,16 @@ static void handle_button_pressed(SystemMediaTransportControls sender,
     SystemMediaTransportControlsButtonPressedEventArgs args) {
     switch (args.Button()) {
     case SystemMediaTransportControlsButton::Pause:
-        notify(NOTIFY_PAUSE);
+        notify(NOTIFY_REQUEST_PAUSE);
         break;
     case SystemMediaTransportControlsButton::Play:
-        notify(NOTIFY_PLAY);
+        notify(NOTIFY_REQUEST_PLAY);
         break;
     case SystemMediaTransportControlsButton::Next:
-        notify(NOTIFY_NEXT_TRACK);
+        notify(NOTIFY_REQUEST_NEXT_TRACK);
         break;
     case SystemMediaTransportControlsButton::Previous:
-        notify(NOTIFY_PREV_TRACK);
+        notify(NOTIFY_REQUEST_PREV_TRACK);
         break;
     }
 }
