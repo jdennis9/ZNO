@@ -225,5 +225,7 @@ static bool track_meets_filter(const Track& track, const char *filter) {
     return metadata_meets_filter(md, filter);
 }
 
+u32 playlist_remove_missing_tracks(Playlist& playlist);
+
 #endif //PLAYLIST_H
 

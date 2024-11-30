@@ -146,4 +146,20 @@ void sort_playlist(Playlist& playlist, int metric, int order) {
     playlist.sort_order = order;
     playlist.unsorted = false;
 }
-    
+
+u32 playlist_remove_missing_tracks(Playlist& playlist) {
+    u32 count = 0;
+    for (i32 i = 0; i < (i32)playlist.tracks.count; ++i) {
+        Track track = playlist.tracks[i];
+        wchar_t path[PATH_LENGTH];
+        library_get_track_path(track, path);
+
+        if (!does_file_exist(path)) {
+            playlist.tracks.ordered_remove(i);
+            i--;
+            count++;
+        }
+    }
+
+    return count;
+}

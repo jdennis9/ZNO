@@ -760,6 +760,18 @@ void show_ui() {
                 ui.show_prefs = true;
             }
             ImGui::Separator();
+            if (false && ImGui::MenuItem("Remove all invalid tracks")) {
+                u32 count = playlist_remove_missing_tracks(ui.library);
+                // Skip search results and queue. With the queue it doesn't matter because invalid
+                // tracks will just be skipped anyway.
+
+                for (u32 i = 0; i < ui.user_playlists.count; ++i) {
+                    playlist_remove_missing_tracks(ui.user_playlists[i]);
+                }
+
+                show_message_box(MESSAGE_BOX_TYPE_INFO, "Removed %u tracks", count);
+            }
+            ImGui::Separator();
             if (ImGui::MenuItem("Minimize to tray")) {
                 notify(NOTIFY_MINIMIZE_TO_TRAY);
             }

@@ -53,6 +53,8 @@ Track library_add_track(const wchar_t *path) {
     if (!is_supported_file(path)) return 0;
 
     Path_Index path_index = store_file_path(path);
+    i32 existing_index = g_library.paths.lookup(path_index);
+    if (existing_index >= 0) return existing_index+1;
     Metadata_Index md_index = read_file_metadata(path);
 
     u32 index = g_library.paths.append(path_index);
