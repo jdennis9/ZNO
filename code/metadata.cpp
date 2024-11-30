@@ -91,6 +91,30 @@ Metadata_Index read_file_metadata(const wchar_t *path) {
     return index;
 }
 
+bool update_file_metadata(Metadata_Index index, const wchar_t *path, Detailed_Metadata *new_md) {
+    TagLib_File *file = taglib_file_new_wchar_(path);
+    Metadata *old_md = &g_metadata[index];
+    if (!file) return false;
+    defer(taglib_file_free(file));
+
+    TagLib_Tag *tag = taglib_file_tag(file);
+    if (!tag) return false;
+    
+    taglib_tag_set_title(tag, new_md->title);
+    taglib_tag_set_artist(tag, new_md->artist);
+    taglib_tag_set_album(tag, new_md->album);
+    taglib_tag_set_comment(tag, new_md->comment);
+    taglib_tag_set_genre(tag, new_md->genre);
+    taglib_tag_set_year(tag, new_md->year);
+    taglib_tag_set_track(tag, new_md->track_number);
+
+    strncpy0(old_md->title, new_md->title, sizeof(old_md->title));
+    strncpy0(old_md->artist, new_md->artist, sizeof(old_md->artist));
+    strncpy0(old_md->album, new_md->album, sizeof(old_md->album));
+
+    return taglib_file_save(file);
+}
+
 bool read_detailed_file_metadata(const wchar_t *path, Detailed_Metadata *md, Image *cover) {
     TagLib_File *file = taglib_file_new_wchar_(path);
     
@@ -99,7 +123,8 @@ bool read_detailed_file_metadata(const wchar_t *path, Detailed_Metadata *md, Ima
     if (file) {
         defer(taglib_file_free(file));
         TagLib_Tag *tag = taglib_file_tag(file);
-        
+        defer(if (tag) taglib_tag_free_strings());
+
         if (cover) {
             TagLib_Complex_Property_Attribute ***props = taglib_complex_property_get(file, "PICTURE");
             if (props) {

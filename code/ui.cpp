@@ -106,6 +106,8 @@ struct UI_State {
     // denote band frequencies
     ImFontAtlas mini_font_atlas;
     ImFont *mini_font;
+
+    Track metadata_editor_track;
 };
 
 static UI_State ui;
@@ -183,6 +185,7 @@ const char *get_window_name(int window) {
         case WINDOW_USER_PLAYLISTS: return "Your Playlists";
         case WINDOW_PLAYLIST_TRACKS: return "Playlist";
         case WINDOW_THEME_EDITOR: return "Theme";
+        case WINDOW_METADATA_EDITOR: return "Edit Metadata";
         case WINDOW_V_SPECTRUM: return "Spectrum";
     }
     
@@ -202,6 +205,7 @@ const char *get_window_internal_name(int window) {
         case WINDOW_USER_PLAYLISTS: return "UserPlaylists";
         case WINDOW_PLAYLIST_TRACKS: return "PlaylistTracks";
         case WINDOW_THEME_EDITOR: return "ThemeEditor";
+        case WINDOW_METADATA_EDITOR: return "MetadataEditor";
         case WINDOW_V_SPECTRUM: return "Spectrum";
     }
     
@@ -438,6 +442,78 @@ static void show_detailed_metadata() {
         return;
     }
     show_detailed_metadata_table("##metadata", ui.detailed_metadata, ui.cover_art);
+}
+
+static void show_metadata_editor() {
+    static Detailed_Metadata md;
+    static Track md_track;
+
+    if (!ui.metadata_editor_track) {
+        ImGui::TextDisabled("No track selected");
+        return;
+    }
+
+    if (ui.metadata_editor_track != md_track) {
+        wchar_t path[PATH_LENGTH];
+        md_track = ui.metadata_editor_track;
+        library_get_track_path(md_track, path);
+        read_detailed_file_metadata(path, &md);
+    }
+
+    ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg|ImGuiTableFlags_SizingStretchProp;
+
+    struct {
+        const char *id;
+        const char *name;
+        char *buf;
+        int buf_size;
+    } md_strings[] = {
+        {"##title", "Title", md.title, sizeof(md.title)},
+        {"##artist", "Artist", md.artist, sizeof(md.artist)},
+        {"##album", "Album", md.album, sizeof(md.album)},
+        {"##Genre", "Genre", md.genre, sizeof(md.genre)},
+    };
+
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
+    if (ImGui::BeginTable("metadata_edit_table", 2, table_flags)) {
+        ImGui::TableSetupColumn("key", 0.3f);
+        ImGui::TableSetupColumn("value", 0.7f);
+
+        for (auto str : md_strings) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::TextUnformatted(str.name);
+            ImGui::TableSetColumnIndex(1);
+            ImGui::InputText(str.id, str.buf, str.buf_size);
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Year");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::InputScalar("##year", ImGuiDataType_U32, &md.year);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Track number");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::InputScalar("##trackno", ImGuiDataType_U32, &md.track_number);
+
+        ImGui::EndTable();
+    }
+    ImGui::PopStyleColor();
+
+    ImGui::TextUnformatted("Comment");
+    ImGui::InputTextMultiline("##comment", md.comment, sizeof(md.comment));
+
+    if (ImGui::Button("Save")) {
+        wchar_t path[PATH_LENGTH];
+        Metadata_Index md_index = library_get_track_metadata_index(md_track);
+        library_get_track_path(md_track, path);
+        if (show_confirm_dialog("Confirm metadata update", "Overwrite metadata for file %ls?", path)) {
+            update_file_metadata(md_index, path, &md);
+        }
+    }
 }
 
 static void load_theme_from_file(const wchar_t *path) {
@@ -1082,6 +1158,7 @@ void init_ui() {
     ui.window_show_fn[WINDOW_SEARCH_RESULTS] = &show_search_results;
     ui.window_show_fn[WINDOW_THEME_EDITOR] = &show_theme_editor;
     ui.window_show_fn[WINDOW_ALBUM_LIST] = &show_album_list_view;
+    ui.window_show_fn[WINDOW_METADATA_EDITOR] = &show_metadata_editor;
     ui.window_show_fn[WINDOW_V_SPECTRUM] = &show_spectrum_ui;
     
     ui.window_flags[WINDOW_METADATA] = ImGuiWindowFlags_AlwaysVerticalScrollbar;
@@ -1152,7 +1229,7 @@ void show_track_context_menu(Playlist& from_playlist, u32 track_index) {
         if (ImGui::MenuItem("New playlist...")) {
             ui.want_to_create_playlist_from_selection = true;
         }
-        
+
         ImGui::EndMenu();
     }
     
@@ -1170,6 +1247,12 @@ void show_track_context_menu(Playlist& from_playlist, u32 track_index) {
         }
     }
     
+    ImGui::Separator();
+
+    if (ImGui::MenuItem("Edit metadata")) {
+        ui.metadata_editor_track = from_playlist.tracks[track_index];
+        bring_window_to_front(WINDOW_METADATA_EDITOR);
+    }
 }
 
 static bool edit_path(const char *label, char *path, File_Type file_type) {

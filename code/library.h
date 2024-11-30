@@ -25,6 +25,7 @@ typedef u32 Track;
 
 Track library_add_track(const wchar_t *path);
 void library_get_track_metadata(Track track, Metadata *md);
+Metadata_Index library_get_track_metadata_index(Track track);
 // Buffer must be at least PATH_LENGTH characters
 void library_get_track_path(Track track, wchar_t *buffer);
 void library_get_track_path(Track track, char *buffer);

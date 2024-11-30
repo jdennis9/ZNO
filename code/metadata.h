@@ -47,6 +47,7 @@ struct Detailed_Metadata {
 
 Metadata_Index read_file_metadata(const wchar_t *path);
 bool read_detailed_file_metadata(const wchar_t *path, Detailed_Metadata *md, Image *image = NULL);
+bool update_file_metadata(Metadata_Index index, const wchar_t *path, Detailed_Metadata *new_md);
 void retrieve_metadata(Metadata_Index index, Metadata *md);
 void save_metadata_cache(const wchar_t *path);
 void load_metadata_cache(const wchar_t *path);

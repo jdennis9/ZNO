@@ -69,6 +69,11 @@ void library_get_track_metadata(Track track, Metadata *md) {
     retrieve_metadata(md_index, md);
 }
 
+Metadata_Index library_get_track_metadata_index(Track track) {
+    ASSERT(track != 0);
+    return g_library.metadata[track-1];
+}
+
 // Buffer must be at least PATH_LENGTH characters
 void library_get_track_path(Track track, wchar_t *buffer) {
     ASSERT(track != 0);
