@@ -812,7 +812,7 @@ void show_ui() {
     const ImGuiStyle& style = ImGui::GetStyle();
     const char *filter_popup_name = "Search playlist";
     ui.filter_popup_id = ImGui::GetID(filter_popup_name);
-    
+
     update_playback_analyzers(16.66f);
     
     // If the current track is not the track
@@ -1007,7 +1007,7 @@ void show_ui() {
         
     }
     //-
-    
+
     //-
     // Status bar
     if (begin_status_bar()) {
@@ -1021,6 +1021,7 @@ void show_ui() {
     ImGui::End();
     //-
     
+
     //-
     // Set up main dock space
     {

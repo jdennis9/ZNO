@@ -179,7 +179,7 @@ void peak_meter_widget(const char *str_id, ImVec2 size) {
         size.y = available_size.y;
 	}
 
-	f32 bar_height = size.y / (f32)channels;
+	f32 bar_height = (size.y / (f32)channels) - 1;
     f32 y_offset = style.FramePadding.y;
 	u32 color = ImGui::GetColorU32(ImGuiCol_PlotHistogram);
 
@@ -201,7 +201,7 @@ void peak_meter_widget(const char *str_id, ImVec2 size) {
 		
 		draw_list->AddRectFilled(min, max, color);
 
-		y_offset += bar_height + 1;
+		y_offset += bar_height;
 	}
     ImGui::InvisibleButton(str_id, size);
 }

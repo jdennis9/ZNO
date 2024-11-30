@@ -177,16 +177,12 @@ void show_spectrum_widget(const char *str_id, float width) {
     ImGui::PlotHistogram(str_id, sg.peaks, SG_BAND_COUNT, 0, NULL, 0.f, 1.f, ImVec2(width, 0));
     ImGui::PopStyleColor();
 }
-
 void show_spectrum_ui() {
     g_metrics.need_update_spectrum = true;
-    ImGuiTableFlags table_flags = ImGuiTableFlags_SizingStretchProp |
-        ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersInnerV;
-    
     ImDrawList *drawlist = ImGui::GetWindowDrawList();
     ImVec2 cursor = ImGui::GetCursorScreenPos();
     ImVec2 region = ImGui::GetContentRegionAvail();
-    f32 bar_width = region.x / SG_BAND_COUNT;
+    f32 bar_width = (region.x / SG_BAND_COUNT) - 1;
     const Spectrum &sg = g_metrics.spectrum;
 
     ui_push_mini_font();
@@ -216,10 +212,26 @@ void show_spectrum_ui() {
 
 void show_channel_peaks_ui() {
     g_metrics.need_update_peak = true;
+    ImDrawList *drawlist = ImGui::GetWindowDrawList();
+    ImVec2 cursor = ImGui::GetCursorScreenPos();
     ImVec2 region = ImGui::GetContentRegionAvail();
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
-    ImGui::PlotHistogram("##peak", g_metrics.peak, g_buffer.channels, 0, NULL, 0.f, 1.f, region);
-    ImGui::PopStyleColor();
+    f32 bar_width = (region.x / g_buffer.channels) - 1;
+    const f32 *peaks = g_metrics.peak;
+
+    f32 max_bar_height = region.y;
+    for (u32 ch = 0; ch < g_buffer.channels; ++ch) {
+        f32 peak = peaks[ch];
+        f32 y_offset = cursor.y + region.y;
+
+        peak = clamp(peak, 0.f, 1.f);
+
+        drawlist->AddRectFilled(
+            ImVec2(cursor.x, y_offset),
+            ImVec2(cursor.x + bar_width, y_offset - (peak * max_bar_height)),
+            ImGui::GetColorU32(ImGuiCol_PlotHistogram));
+
+        cursor.x += bar_width + 1;
+    }
 }
 
 void update_playback_analyzers(f32 delta_ms) {
