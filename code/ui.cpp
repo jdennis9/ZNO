@@ -1218,7 +1218,7 @@ static void show_prefs_editor() {
         ImGui::TableSetColumnIndex(0);
         ImGui::TextUnformatted("Font Size");
         ImGui::TableSetColumnIndex(1);
-        apply |= ImGui::SliderInt("#font_size", &prefs.font_size,
+        apply |= ImGui::SliderInt("##font_size", &prefs.font_size,
                                   Preferences::FONT_SIZE_MIN,
                                   Preferences::FONT_SIZE_MAX);
         
