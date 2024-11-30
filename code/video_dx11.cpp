@@ -127,32 +127,72 @@ static int image_format_bytes_per_pixel(int format) {
 }
 
 Texture *create_texture_from_image(Image *image) {
-	ID3D11ShaderResourceView *view;
-	ID3D11Texture2D *texture;
+	// Staging texture where we write the image data to
+	ID3D11Texture2D *texture = NULL;
+	// Staging texture gets copied to this texture and
+	// a shader resource view for this is returned
+	ID3D11Texture2D *dst_texture = NULL;
+	ID3D11ShaderResourceView *view = NULL;
+
+	// We use a separate texture for writing the image data
+	// because for some reason passing the image data to CreateTexture2D
+	// causes CPU memory usage to sky rocket and never go down.
 
 	D3D11_TEXTURE2D_DESC desc = {};
 	desc.Width = image->width;
 	desc.Height = image->height;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = image_format_to_dxgi(image->format);
+	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	desc.SampleDesc.Count = 1;
-	desc.Usage = D3D11_USAGE_IMMUTABLE;
+	desc.Usage = D3D11_USAGE_DYNAMIC;
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	D3D11_SUBRESOURCE_DATA data = {};
-	data.pSysMem = image->data;
-	data.SysMemPitch = image->width * image_format_bytes_per_pixel(image->format);
-
-	g_device->CreateTexture2D(&desc, &data, &texture);
-	if (!texture) return NULL;
+	// Create staging texture
+	g_device->CreateTexture2D(&desc, NULL, &texture);
+	if (!texture) {
+		return NULL;
+	}
 	defer(texture->Release());
+
+	// Create texture used in shader
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.CPUAccessFlags = 0;
+	g_device->CreateTexture2D(&desc, NULL, &dst_texture);
+	if (!dst_texture) {
+		return NULL;
+	}
+	defer(dst_texture->Release());
+
+	D3D11_MAPPED_SUBRESOURCE mapped;
+	g_context->Map(texture, D3D11CalcSubresource(0, 0, 1), D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+
+	u8 *out = (u8*)mapped.pData;
+	u8 *in = image->data;
+
+	for (i32 row = 0; row < image->height; ++row) {
+		i32 row_offset = row * mapped.RowPitch;
+		for (i32 col = 0; col < image->width; ++col) {
+			i32 col_offset = col * 4;
+			out[row_offset+col_offset+0] = in[0];
+			out[row_offset+col_offset+1] = in[1];
+			out[row_offset+col_offset+2] = in[2];
+			out[row_offset+col_offset+3] = in[3];
+
+			in += 4;
+		}
+	}
+
+	g_context->Unmap(texture, D3D10CalcSubresource(0, 0, 1));
+
+	g_context->CopyResource(dst_texture, texture);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC sr = {};
 	sr.Format = desc.Format;
 	sr.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	sr.Texture2D.MipLevels = 1;
-	g_device->CreateShaderResourceView(texture, &sr, &view);
+	g_device->CreateShaderResourceView(dst_texture, &sr, &view);
 
 	return view;
 }
