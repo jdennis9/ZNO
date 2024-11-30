@@ -776,14 +776,14 @@ static void remove_tray_icon() {
 }
 
 void set_window_title_message(const char *format, ...) {
-    wchar_t title[512];
+    wchar_t title[512] = {};
     char formatted_message[512];
     va_list va;
     va_start(va, format);
-    vsnprintf(formatted_message, sizeof(formatted_message), format, va);
+    vsnprintf(formatted_message, sizeof(formatted_message)-1, format, va);
     va_end(va);
     
-    _snwprintf(title, ARRAY_LENGTH(title), L"ZNO MP " APP_VERSION_STRING "  |  %hs", formatted_message);
+    _snwprintf(title, ARRAY_LENGTH(title)-1, L"ZNO MP " APP_VERSION_STRING "  |  %hs", formatted_message);
     SetWindowTextW(g_hwnd, title);
 }
 
