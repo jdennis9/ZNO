@@ -42,8 +42,8 @@ static int compare_titles_descending(const void *p_a, const void *p_b) {
     Metadata am;
     Metadata bm;
     
-    retrieve_metadata(a.metadata, &am);
-    retrieve_metadata(b.metadata, &bm);
+    library_get_track_metadata(a, &am);
+    library_get_track_metadata(b, &bm);
     
     return strcasecmp(am.title, bm.title);
 }
@@ -54,8 +54,8 @@ static int compare_artists_descending(const void *p_a, const void *p_b) {
     Metadata am;
     Metadata bm;
     
-    retrieve_metadata(a.metadata, &am);
-    retrieve_metadata(b.metadata, &bm);
+    library_get_track_metadata(a, &am);
+    library_get_track_metadata(b, &bm);
     
     int cmp = strcasecmp(am.artist, bm.artist);
     if (!cmp) cmp = strcasecmp(am.album, bm.album);
@@ -69,8 +69,8 @@ static int compare_albums_descending(const void *p_a, const void *p_b) {
     Metadata am;
     Metadata bm;
     
-    retrieve_metadata(a.metadata, &am);
-    retrieve_metadata(b.metadata, &bm);
+    library_get_track_metadata(a, &am);
+    library_get_track_metadata(b, &bm);
     
     int cmp = strcasecmp(am.album, bm.album);
     if (!cmp) cmp = strcasecmp(am.title, bm.title);
@@ -83,8 +83,8 @@ static int compare_duration_descending(const void *p_a, const void *p_b) {
     Metadata am;
     Metadata bm;
     
-    retrieve_metadata(a.metadata, &am);
-    retrieve_metadata(b.metadata, &bm);
+    library_get_track_metadata(a, &am);
+    library_get_track_metadata(b, &bm);
     
     if (am.duration_seconds == bm.duration_seconds) return 0;
     else if (am.duration_seconds < bm.duration_seconds) return -1;

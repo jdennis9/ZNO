@@ -24,7 +24,7 @@
 #include <winrt/windows.foundation.collections.h>
 #include "media_controls.h"
 #include "playback.h"
-#include "playlist.h"
+#include "library.h"
 #include "main.h"
 
 using namespace winrt::Windows::Media;
@@ -67,7 +67,7 @@ void update_media_controls_state() {
 
 void update_media_controls_metadata(Track track) {
     Metadata md;
-    retrieve_metadata(track.metadata, &md);
+    library_get_track_metadata(track, &md);
 
     auto updater = g_smtc.DisplayUpdater();
     updater.Type(MediaPlaybackType::Music);

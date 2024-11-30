@@ -27,6 +27,7 @@
 #include "video.h"
 #include "layouts.h"
 #include "theme.h"
+#include "filenames.h"
 #include <ini.h>
 #include <imgui.h>
 
@@ -117,7 +118,7 @@ static void show_about();
 
 static void add_to_albums(const Track& track) {
     Metadata track_md;
-    retrieve_metadata(track.metadata, &track_md);
+    library_get_track_metadata(track, &track_md);
     // If there is no album tag we don't need to do anything
     if (!track_md.album[0]) return;
     
@@ -150,12 +151,13 @@ Recurse_Command add_tracks_to_playlist_iterator(void *in_data, const wchar_t *pa
     ASSERT(in_data);
     ASSERT(state->target);
     
-    Track track;
-    
     if (is_folder) {
         for_each_file_in_folder(path, &add_tracks_to_playlist_iterator, state);
     }
-    else if (track_from_file(path, &track)) {
+    else {
+        Track track = library_add_track(path);
+        if (!track) return RECURSE_CONTINUE;
+
         state->target->add_track(track);
         add_to_albums(track);
         if (state->target != &ui.library) {
@@ -259,11 +261,11 @@ static void save_user_playlist(u32 index) {
 static void play_track(const Track& track) {
     wchar_t track_path[PATH_LENGTH];
     ui.current_track = track;
-    retrieve_file_path(track.path, track_path, PATH_LENGTH);
+    library_get_track_path(track, track_path);
     playback_load_file(track_path);
     
     Metadata md;
-    retrieve_metadata(track.metadata, &md);
+    library_get_track_metadata(track, &md);
     
     set_window_title_message("%s - %s", md.artist, md.title);
     notify(NOTIFY_NEW_TRACK_PLAYING);
@@ -409,13 +411,13 @@ static void show_search_results() {
 
 // Call upon playing a new track
 static void update_detailed_metadata() {
-    const Track& track = ui.current_track;
-    if (track.is_null()) return;
+    Track track = ui.current_track;
+    if (!track) return;
     
     if (ui.detailed_metadata_track != track) {
         wchar_t path[PATH_LENGTH];
         Image cover_art;
-        retrieve_file_path(track.path, path, PATH_LENGTH);
+        library_get_track_path(track, path);
         read_detailed_file_metadata(path, &ui.detailed_metadata, &cover_art);
         ui.detailed_metadata_track = track;
         
@@ -431,7 +433,7 @@ static void update_detailed_metadata() {
 }
 
 static void show_detailed_metadata() {
-    if (ui.current_track.is_null()) {
+    if (!ui.current_track) {
         ImGui::TextDisabled("No metadata currently loaded");
         return;
     }
@@ -742,7 +744,7 @@ void show_ui() {
     // which UI functions might want to use.
     update_detailed_metadata();
     
-    float menu_bar_height;
+    float menu_bar_height = 0.f;
     Preferences &prefs = get_preferences();
     
     //-
@@ -910,9 +912,9 @@ void show_ui() {
     //-
     // Status bar
     if (begin_status_bar()) {
-        if (!ui.current_track.is_null()) {
+        if (ui.current_track) {
             Metadata md;
-            retrieve_metadata(ui.current_track.metadata, &md);
+            library_get_track_metadata(ui.current_track, &md);
             ImGui::Text("Now playing: %s - %s", md.artist, md.title);
         }
         end_status_bar();

@@ -157,7 +157,7 @@ static void show_track_range(Playlist& playlist, u32 start,
         const Track& track = playlist.tracks[i_track];
         const bool is_selected = is_track_selected(track);
         const bool is_playing = current_track == track;
-        retrieve_metadata(track.metadata, &metadata);
+        library_get_track_metadata(track, &metadata);
         
         if (playlist.filter[0] && !metadata_meets_filter(metadata, filter_lowercase)) {
             continue;
@@ -439,7 +439,7 @@ bool save_playlist_to_file(const Playlist& playlist, const wchar_t *filename) {
     // Track paths
     for (u32 i = 0; i < playlist.tracks.count; ++i) {
         char path[PATH_LENGTH];
-        retrieve_file_path(playlist.tracks[i].path, path, PATH_LENGTH);
+        library_get_track_path(playlist.tracks[i], path);
         fprintf(f, "%s\n", path);
     }
     

@@ -20,9 +20,8 @@
 
 #include "defines.h"
 #include "array.h"
-#include "filenames.h"
 #include "platform.h"
-#include "metadata.h"
+#include "library.h"
 #include <stdlib.h>
 #include <xxhash.h>
 #include <ctype.h>
@@ -48,7 +47,7 @@ enum {
 
 #define PLAYLIST_SORT_METRIC__COUNT (SORT_METRIC__LAST+1)
 
-struct Track {
+/*struct Track {
     Path_Index path;
     Metadata_Index metadata;
     
@@ -63,7 +62,7 @@ struct Track {
     INLINE bool operator!=(const Track& other) const {
         return other.metadata != metadata || other.path != path;
     }
-};
+};*/
 
 static inline const char *sort_metric_to_string(int metric) {
     switch (metric) {
@@ -96,43 +95,6 @@ static inline int sort_order_from_string(const char *string) {
     if (!strcmp(string, sort_order_to_string(SORT_ORDER_DESCENDING)))
         return SORT_ORDER_DESCENDING;
     return SORT_ORDER_ASCENDING;
-}
-
-static inline bool case_insensitive_string_equal(const wchar_t *a, const wchar_t *b) {
-    for (; *a && *b; ++a, ++b) {
-        if (tolower(*a) != tolower(*b)) return false;
-    }
-    return !*a && !*b;
-}
-
-// Guess from file extension whether a file is supported
-// @NOTE: This needs to be maintained within platform.cpp (AUDIO_FILE_TYPES)
-static bool is_supported_file(const wchar_t *path) {
-    const wchar_t *extension = wcsrchr((wchar_t*)path, '.');
-    if (!extension) return false;
-    
-    return 
-        case_insensitive_string_equal(extension, L".mp3") ||
-        case_insensitive_string_equal(extension, L".aiff") ||
-        case_insensitive_string_equal(extension, L".flac") ||
-        case_insensitive_string_equal(extension, L".opus") ||
-        case_insensitive_string_equal(extension, L".ape") ||
-        case_insensitive_string_equal(extension, L".wav");
-}
-
-static inline bool track_from_file(const wchar_t *path, Track *track) {
-    if (!is_supported_file(path)) {
-        wlog_debug(L"File %s is unsupported\n", path);
-        return false;
-    }
-    // This slows load times by more that 10x. Need to do something about it
-    /*if (!does_file_exist(path)) {
-        wlog_debug(L"File %s is does not exist\n", path);
-        return false;
-    }*/
-    track->path = store_file_path(path);
-    track->metadata = read_file_metadata(path);
-    return true;
 }
 
 struct Playlist;
@@ -179,14 +141,13 @@ struct Playlist {
         unsorted = true;
     }
     
-    inline bool add_track(const Track& track) {
-        bool added = tracks.append_unique(track);
-        return added;
+    inline bool add_track(Track track) {
+        return tracks.append_unique(track);
     }
     
     inline bool add_track(const wchar_t *path) {
-        Track track = {};
-        if (track_from_file(path, &track)) {
+        Track track = library_add_track(path);
+        if (track) {
             return this->add_track(track);
         }
         return false;
@@ -260,7 +221,7 @@ static bool metadata_meets_filter(const Metadata& md, const char *filter) {
 
 static bool track_meets_filter(const Track& track, const char *filter) {
     Metadata md;
-    retrieve_metadata(track.metadata, &md);
+    library_get_track_metadata(track, &md);
     return metadata_meets_filter(md, filter);
 }
 
