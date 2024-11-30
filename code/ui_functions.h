@@ -125,7 +125,7 @@ bool load_playlist_from_file(const wchar_t *path, Playlist& playlist);
 // From ui_custom.cpp. These all use imgui_internal.h
 bool circle_handle_slider(const char *str_id, float *value, float min, float max, ImVec2 size);
 // @TODO: Separate into left/right channels
-void peak_meter_widget(const char *str_id, float value, ImVec2 size);
+void peak_meter_widget(const char *str_id, ImVec2 size);
 // Calls ImGui::Begin() so make sure to call ImGui::End() no matter the return value is!
 bool begin_status_bar();
 void end_status_bar();

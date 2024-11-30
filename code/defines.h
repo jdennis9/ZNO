@@ -32,6 +32,7 @@
 #define INLINE __forceinline
 #define ASSERT assert
 #define PATH_LENGTH 384
+#define MAX_AUDIO_CHANNELS 8
 
 typedef uint8_t u8;
 typedef uint16_t u16;

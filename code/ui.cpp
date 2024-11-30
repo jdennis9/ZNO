@@ -941,7 +941,7 @@ void show_ui() {
         ImGui::Separator();
         switch (prefs.menu_bar_visualizer) {
         case MENU_BAR_VISUAL_PEAK_METER:
-            peak_meter_widget("##peak_meter", get_playback_peak(), ImVec2(150, 0));
+            peak_meter_widget("##peak_meter", ImVec2(150, 0));
             break;
         case MENU_BAR_VISUAL_SPECTRUM:
             show_spectrum_widget("##spectrum", 150);

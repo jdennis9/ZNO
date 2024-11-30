@@ -17,6 +17,7 @@
 */
 #include "ui_functions.h"
 #include "theme.h"
+#include "playback_analysis.h"
 #include <imgui_internal.h>
 
 // Trim spaces from string
@@ -166,38 +167,42 @@ bool circle_handle_slider(const char *str_id, float *p_value, float min, float m
     draw_list->AddRectFilled(min, mid_max, fg);
 }*/
 
-void peak_meter_widget(const char *str_id, float value, ImVec2 size) {
+void peak_meter_widget(const char *str_id, ImVec2 size) {
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
 	ImVec2 available_size = ImGui::GetContentRegionAvail();
 	ImVec2 cursor = ImGui::GetCursorScreenPos();
 	ImGuiStyle& style = ImGui::GetStyle();
-    
+    f32 peaks[MAX_AUDIO_CHANNELS];
+	int channels = get_playback_channel_peaks(peaks);
+
     if (size.y == 0.f) {
         size.y = available_size.y;
-    }
-    
-    //value = log2f(value + 1.f);
-    value = clamp(value, 0.f, 1.f);
-    
-    ImVec2 min = {
-        cursor.x,
-        cursor.y + style.FramePadding.y,
-    };
-    
-    ImVec2 mid_max = {
-        min.x + size.x*value,
-        min.y + size.y,
-    };
-    
-    ImVec2 max = {
-        min.x + size.x,
-        min.y + size.y,
-    };
-    
-    u32 low_color = get_theme_color(THEME_COLOR_PEAK_METER);
-    u32 high_color = get_theme_color(THEME_COLOR_PEAK_METER_BG);
-    draw_list->AddRectFilled(min, max, high_color);
-    draw_list->AddRectFilled(min, mid_max, low_color);
+	}
+
+	f32 bar_height = size.y / (f32)channels;
+    f32 y_offset = style.FramePadding.y;
+	u32 color = ImGui::GetColorU32(ImGuiCol_PlotHistogram);
+
+	for (int ch = 0; ch < channels; ++ch) {
+		ImVec2 min = {
+			cursor.x,
+			cursor.y + y_offset,
+		};
+
+		ImVec2 max = {
+			min.x + size.x*peaks[ch],
+			min.y + bar_height,
+		};
+
+		ImVec2 mid_max = {
+			min.x + size.x*peaks[ch],
+			min.y + bar_height,
+		};
+		
+		draw_list->AddRectFilled(min, max, color);
+
+		y_offset += bar_height + 1;
+	}
     ImGui::InvisibleButton(str_id, size);
 }
 

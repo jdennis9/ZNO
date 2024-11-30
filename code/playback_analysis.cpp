@@ -104,6 +104,12 @@ f32 get_playback_peak() {
     return sum / channels;
 }
 
+int get_playback_channel_peaks(f32 *out) {
+    g_metrics.need_update_peak = true;
+    for (int i = 0; i < g_buffer.channels; ++i) out[i] = g_metrics.peak[i];
+    return g_buffer.channels;
+}
+
 void calc_frame_peak(Playback_Buffer_View *view, f32 *out) {
 
     for (i32 ch = 0; ch < view->channels; ++ch) {
@@ -209,6 +215,7 @@ void show_spectrum_ui() {
 }
 
 void show_channel_peaks_ui() {
+    g_metrics.need_update_peak = true;
     ImVec2 region = ImGui::GetContentRegionAvail();
     ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
     ImGui::PlotHistogram("##peak", g_metrics.peak, g_buffer.channels, 0, NULL, 0.f, 1.f, region);
@@ -228,8 +235,6 @@ void update_playback_analyzers(f32 delta_ms) {
         for (int i = 0; i < SG_BAND_COUNT; ++i) {
             g_metrics.spectrum.peaks[i] = lerp(g_metrics.spectrum.peaks[i], 0, delta_ms*SPECTRUM_ROUGHNESS);
         }
-
-        //g_metrics.peak = lerp(g_metrics.peak, 0, delta_ms*PEAK_ROUGHNESS);
 
         for (int i = 0; i < g_buffer.channels; ++i) {
             g_metrics.peak[i] = lerp(g_metrics.peak[i], 0.f, delta_ms*PEAK_ROUGHNESS);
