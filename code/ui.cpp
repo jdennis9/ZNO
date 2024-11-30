@@ -28,8 +28,10 @@
 #include "layouts.h"
 #include "theme.h"
 #include "filenames.h"
+#include "platform.h"
 #include <ini.h>
 #include <imgui.h>
+#include <atomic>
 
 #define PLAYLIST_DIRECTORY "Playlists"
 #define PLAYLIST_DIRECTORY_W L"Playlists"
@@ -108,6 +110,18 @@ struct UI_State {
     ImFont *mini_font;
 
     Track metadata_editor_track;
+
+    Thread track_scan_thread;
+    struct {
+        std::atomic<u32> total_track_count;
+        std::atomic<u32> tracks_loaded;
+        std::atomic<u32> errors;
+        std::atomic<u32> done;
+    } track_scan_progress;
+    struct {
+        Array<wchar_t> path_pool;
+        Array<u32> paths;
+    } track_scan_buffer;
 };
 
 static UI_State ui;
@@ -148,30 +162,20 @@ static void add_to_albums(const Track& track) {
     album.tracks.append_unique(track);
 }
 
-Recurse_Command add_tracks_to_playlist_iterator(void *in_data, const wchar_t *path, bool is_folder) {
-    Add_Tracks_Iterator_State *state = (Add_Tracks_Iterator_State*)in_data;
-    ASSERT(in_data);
-    ASSERT(state->target);
-    
+Recurse_Command add_tracks_to_async_scan(void *in_data, const wchar_t *path, bool is_folder) {
     if (is_folder) {
-        for_each_file_in_folder(path, &add_tracks_to_playlist_iterator, state);
+        for_each_file_in_folder(path, &add_tracks_to_async_scan, NULL);
     }
     else {
-        Track track = library_add_track(path);
-        if (!track) return RECURSE_CONTINUE;
-
-        state->target->add_track(track);
-        add_to_albums(track);
-        if (state->target != &ui.library) {
-            ui.library.add_track(track);
-        }
-        ui.library_altered = true;
-        state->track_count++;
+        size_t len = (u32)wcslen(path);
+        size_t offset = ui.track_scan_buffer.path_pool.push(len+1);
+        memcpy(&ui.track_scan_buffer.path_pool[offset], path, len * sizeof(wchar_t));
+        ui.track_scan_buffer.path_pool[offset + len] = 0;
+        ui.track_scan_buffer.paths.append(offset);
     }
-    
+
     return RECURSE_CONTINUE;
 }
-
 
 const char *get_window_name(int window) {
     ASSERT(window >= 0 && window < WINDOW__COUNT);
@@ -825,6 +829,43 @@ void show_ui() {
     float menu_bar_height = 0.f;
     Preferences &prefs = get_preferences();
     
+    if (ui.track_scan_thread) {
+        u32 total_tracks = ui.track_scan_progress.total_track_count;
+        u32 loaded_tracks = ui.track_scan_progress.tracks_loaded;
+        u32 errors = ui.track_scan_progress.errors;
+        bool done = ui.track_scan_progress.done;
+
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration;
+        ImVec2 window_size = io.DisplaySize;
+        ImVec2 window_pos;
+
+        window_size.x *= 0.5f;
+        window_size.y *= 0.5f;
+        window_pos.x = (io.DisplaySize.x * 0.5f) - (window_size.x * 0.5f);
+        window_pos.y = (io.DisplaySize.y * 0.5f) - (window_size.y * 0.5f);
+
+        ImGui::SetNextWindowSize(window_size);
+        ImGui::SetNextWindowPos(window_pos);
+        if (ImGui::Begin("Adding Tracks", NULL, window_flags)) {
+            ImGui::TextUnformatted(
+                "Scanning files... This may take some time for a"
+                "large number of files or files on a hard drive");
+            ImGui::ProgressBar((f32)loaded_tracks / (f32)total_tracks, ImVec2(0, 0), "");
+            ImGui::Text("%u / %u (%u errors)", loaded_tracks, total_tracks, errors);
+        }
+        ImGui::End();
+
+        if (done) {
+            thread_destroy(ui.track_scan_thread);
+            ui.track_scan_thread = NULL;
+            ui.track_scan_buffer.paths.free();
+            ui.track_scan_buffer.path_pool.free();
+            ui.track_scan_progress.done = false;
+        }
+
+        return;
+    }
+
     //-
     // Main menu
     if (ImGui::BeginMainMenuBar()) {
@@ -1212,6 +1253,31 @@ static void save_all_state() {
     save_playlist_to_file(ui.library, LIBRARY_PATH);
 }
 
+// Show menu items to add files or folders to a playlist
+bool show_add_files_menu(Playlist *playlist) {
+    if (ImGui::MenuItem("Add files")) {
+        bool commit = open_file_multiselect_dialog(FILE_TYPE_AUDIO, &add_tracks_to_async_scan,
+            NULL);
+
+        if (commit) {
+            begin_add_tracks_async_scan(playlist);
+            return true;
+        }
+    }
+
+    if (ImGui::MenuItem("Add folders")) {
+        bool commit = open_folder_multiselect_dialog(FILE_TYPE_AUDIO, &add_tracks_to_async_scan, 
+            NULL);
+
+        if (commit) {
+            begin_add_tracks_async_scan(playlist);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void show_track_context_menu(Playlist& from_playlist, u32 track_index) {
     u32 from_playlist_id = from_playlist.get_id();
     if (ImGui::BeginMenu("Add to playlist")) {
@@ -1495,14 +1561,12 @@ bool accept_drag_drop_to_playlist(Playlist& playlist) {
     }
     else if (ImGui::AcceptDragDropPayload("FILES")) {
         const File_Drag_Drop_Payload& payload = get_file_drag_drop_payload();
-        Add_Tracks_Iterator_State iter = {};
-        iter.target = &playlist;
         
         for (u32 i = 0; i < payload.offsets.count; ++i) {
             const wchar_t *path = &payload.string_pool[payload.offsets[i]];
-            add_tracks_to_playlist_iterator(&iter, path, is_path_a_folder(path));
+            add_tracks_to_async_scan(NULL, path, is_path_a_folder(path));
         }
-        playlist.sort();
+        begin_add_tracks_async_scan(&playlist);
         return true;
     }
     
@@ -1512,6 +1576,75 @@ bool accept_drag_drop_to_playlist(Playlist& playlist) {
 static void show_about() {
     show_license_info();
 }
-    
-    
+
+static Recurse_Command async_file_scan_iterator(void *target_ptr, const wchar_t *path, bool is_folder) {
+    Playlist *target = (Playlist*)target_ptr;
+
+
+    if (is_folder) {
+        for_each_file_in_folder(path, &async_file_scan_iterator, target);
+    }
+    else {
+        Track track = library_add_track(path);
+        if (!track) {
+            ui.track_scan_progress.errors++;
+            return RECURSE_CONTINUE;
+        }
+
+        target->add_track(track);
+        add_to_albums(track);
+        if (target != &ui.library) {
+            ui.library.add_track(track);
+        }
+        ui.library_altered = true;
+        ui.track_scan_progress.tracks_loaded++;
+    }
+
+    return RECURSE_CONTINUE;
+}
+
+static Recurse_Command file_counting_iterator(void *value_ptr, const wchar_t *path, bool is_folder) {
+    u32 *value = (u32*)value_ptr;
+
+    if (is_folder) {
+        for_each_file_in_folder(path, &file_counting_iterator, value);
+    }
+    else if (is_supported_file(path)) {
+        *value += 1;
+    }
+
+    return RECURSE_CONTINUE;
+}
+
+static int async_file_scan_thread_func(void *target_ptr) {
+    Playlist *target = (Playlist*)target_ptr;
+    u32 input_count = ui.track_scan_buffer.paths.count;
+    u32 file_count = 0;
+    const Array<wchar_t>& path_pool = ui.track_scan_buffer.path_pool;
+    const Array<u32>& paths = ui.track_scan_buffer.paths;
+
+    for (u32 i = 0; i < input_count; ++i) {
+        const wchar_t *path = &path_pool[paths[i]];
+        file_counting_iterator(&file_count, path, is_path_a_folder(path));
+    }
+
+    ui.track_scan_progress.total_track_count = file_count;
+
+    for (u32 i = 0; i < input_count; ++i) {
+        const wchar_t *path = &path_pool[paths[i]];
+        async_file_scan_iterator(target, path, is_path_a_folder(path));
+    }
+
+    ui.track_scan_progress.done = true;
+
+    return 0;
+}
+
+static void begin_add_tracks_async_scan(Playlist *target) {
+    ASSERT(ui.track_scan_progress.done == false);
+    ui.track_scan_progress.total_track_count = 0;
+    ui.track_scan_progress.tracks_loaded = 0;
+    ui.track_scan_progress.errors = 0;
+    ui.track_scan_thread = thread_create(target, &async_file_scan_thread_func);
+}
     

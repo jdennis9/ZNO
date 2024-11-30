@@ -43,15 +43,11 @@ enum {
     WINDOW__COUNT,
 };
 
-struct Add_Tracks_Iterator_State {
-    Playlist *target;
-    u32 track_count;
-};
-
 //-
 // From ui.cpp
-Recurse_Command add_tracks_to_playlist_iterator(void *in_data, const wchar_t *path, bool is_folder);
+Recurse_Command add_tracks_to_async_scan(void *in_data, const wchar_t *path, bool is_folder);
 void show_track_context_menu(Playlist& playlist, u32 track_index);
+bool show_add_files_menu(Playlist *playlist);
 void select_track_in_playlist(Playlist& playlist, u32 track_index);
 bool is_track_selected(const Track& track);
 void clear_track_selection();
@@ -68,6 +64,7 @@ const char *get_window_internal_name(int window);
 int get_window_from_name(const char *name);
 int is_window_open(int window);
 void set_window_showing(int window, bool showing);
+void begin_add_tracks_async_scan(Playlist *target);
 //-
 
 //-

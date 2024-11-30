@@ -57,6 +57,37 @@ void destroy_mutex(Mutex mutex) {
     if (mutex) CloseHandle(mutex);
 }
 
+struct Thread_Func_Wrapper_Data {
+    void *data;
+    Thread_Func *func;
+    HANDLE semaphore;
+};
+
+static DWORD thread_func_wrapper(LPVOID user_data) {
+    Thread_Func_Wrapper_Data *data = (Thread_Func_Wrapper_Data*)user_data;
+    ReleaseSemaphore(data->semaphore, 1, NULL);
+    int result = data->func(data->data);
+    delete data;
+    return result;
+}
+
+Thread thread_create(void *user_data, Thread_Func *func) {
+    Thread_Func_Wrapper_Data *data = new Thread_Func_Wrapper_Data;
+    data->data = user_data;
+    data->func = func;
+    data->semaphore = CreateSemaphoreW(NULL, 0, 1, NULL);
+
+    return CreateThread(NULL, 0, &thread_func_wrapper, data, 0, 0);
+}
+
+void thread_join(Thread thread) {
+    WaitForSingleObject(thread, INFINITE);
+}
+
+void thread_destroy(Thread thread) {
+    CloseHandle(thread);
+}
+
 void show_message_box(Message_Box_Type type, const char *format, ...) {
     char message[4096];
     va_list va;

@@ -21,6 +21,8 @@
 #include "defines.h"
 
 typedef void *Mutex;
+typedef void *Thread;
+typedef int Thread_Func(void *data);
 
 enum Message_Box_Type {
     MESSAGE_BOX_TYPE_INFO,
@@ -63,6 +65,9 @@ Mutex create_mutex();
 void lock_mutex(Mutex mutex);
 void unlock_mutex(Mutex mutex);
 void destroy_mutex(Mutex mutex);
+Thread thread_create(void *user_data, Thread_Func *func);
+void thread_join(Thread thread);
+void thread_destroy(Thread thread);
 void show_message_box(Message_Box_Type type, const char *format, ...);
 bool show_yes_no_dialog(const char *title, const char *format, ...);
 bool show_confirm_dialog(const char *title, const char *format, ...);
@@ -78,5 +83,6 @@ void generate_temporary_file_name(const wchar_t *base_path, wchar_t *buffer, int
 void show_last_error_in_message_box(const wchar_t *title);
 void delete_file(const wchar_t *path);
 bool is_path_a_folder(const wchar_t *path);
+
 
 #endif //PLATFORM_H

@@ -391,38 +391,6 @@ void show_detailed_metadata_table(const char *str_id, const Detailed_Metadata& m
     }
 }
 
-// Show menu items to add files or folders to a playlist
-bool show_add_files_menu(Playlist *playlist) {
-    Add_Tracks_Iterator_State iterator = {};
-    iterator.target = playlist;
-    
-    if (ImGui::MenuItem("Add files")) {
-        bool commit = open_file_multiselect_dialog(FILE_TYPE_AUDIO, &add_tracks_to_playlist_iterator,
-                                                   &iterator);
-        
-        if (commit) {
-            show_message_box(MESSAGE_BOX_TYPE_INFO, "Added %u tracks to %s",
-                             iterator.track_count, iterator.target->name);
-            iterator.target->sort();
-            return true;
-        }
-    }
-    
-    if (ImGui::MenuItem("Add folders")) {
-        bool commit = open_folder_multiselect_dialog(FILE_TYPE_AUDIO, &add_tracks_to_playlist_iterator, 
-                                                     &iterator);
-        
-        if (commit) {
-            show_message_box(MESSAGE_BOX_TYPE_INFO, "Added %u tracks to %s",
-                             iterator.track_count, iterator.target->name);
-            iterator.target->sort();
-            return true;
-        }
-    }
-    
-    return false;
-}
-
 bool save_playlist_to_file(const Playlist& playlist, const wchar_t *filename) {
     FILE *f = _wfopen(filename, L"w");
     if (!f) {
