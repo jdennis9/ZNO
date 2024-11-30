@@ -168,44 +168,35 @@ void show_spectrum_ui() {
     ImGuiTableFlags table_flags = ImGuiTableFlags_SizingStretchProp |
         ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersInnerV;
     
-    // First, show the frequency cut-offs
-    if (ImGui::BeginTable("##frequencies", SG_BAND_COUNT, table_flags)) {
-        f32 col_weight = 1.f / (f32)SG_BAND_COUNT;
-        for (u32 i = 0; i < SG_BAND_COUNT; ++i) {
-            char col_name[4] = {};
-            snprintf(col_name, 3, "%u", i);
-            ImGui::TableSetupColumn(col_name, 0, col_weight);
-        }
-        
-        ImGui::TableNextRow();
-        
-        ui_push_mini_font();
-        for (u32 i = 0; i < SG_BAND_COUNT; ++i) {
-            char col_text[8] = {};
-            int freq = SG_BAND_OFFSETS[i + 1];
-            
-            ImGui::TableSetColumnIndex(i);
-            
-            if (freq < 1000) snprintf(col_text, 7, "%d", freq);
-            else snprintf(col_text, 7, "%.1fK", (f32)freq / 1000.f);
-            ImGui::TextUnformatted(col_text);
-        }
-        ui_pop_mini_font();
-        
-        ImGui::EndTable();
-    }
-    
     ImDrawList *drawlist = ImGui::GetWindowDrawList();
     ImVec2 cursor = ImGui::GetCursorScreenPos();
     ImVec2 region = ImGui::GetContentRegionAvail();
     f32 bar_width = region.x / SG_BAND_COUNT;
     const Spectrum &sg = g_metrics.spectrum;
 
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-    ImGui::PlotHistogram("##spectrum", sg.peaks, SG_BAND_COUNT, 0, NULL, 0.f, 1.f, region);
-    ImGui::PopStyleVar();
-    ImGui::PopStyleColor();
+    ui_push_mini_font();
+    f32 line_height = ImGui::GetTextLineHeight();
+    f32 max_bar_height = region.y - line_height;
+    for (u32 band = 0; band < SG_BAND_COUNT; ++band) {
+        f32 peak = sg.peaks[band];
+        char freq_text[8] = {};
+        int freq = SG_BAND_OFFSETS[band+1];
+        f32 y_offset = cursor.y + region.y - line_height;
+
+        if (freq < 1000) snprintf(freq_text, 7, "%d", freq);
+        else snprintf(freq_text, 7, "%.1fK", (f32)freq / 1000.f);
+
+        drawlist->AddText(ImVec2(cursor.x, y_offset),
+            ImGui::GetColorU32(ImGuiCol_TextDisabled), freq_text);
+
+        drawlist->AddRectFilled(
+            ImVec2(cursor.x, y_offset),
+            ImVec2(cursor.x + bar_width, y_offset - (peak * max_bar_height)),
+            ImGui::GetColorU32(ImGuiCol_PlotHistogram));
+
+        cursor.x += bar_width + 1;
+    }
+    ui_pop_mini_font();
 }
 
 void update_playback_analyzers(f32 delta_ms) {
