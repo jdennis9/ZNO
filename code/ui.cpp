@@ -848,7 +848,7 @@ void show_ui() {
         ImGui::SetNextWindowPos(window_pos);
         if (ImGui::Begin("Adding Tracks", NULL, window_flags)) {
             ImGui::TextUnformatted(
-                "Scanning files... This may take some time for a"
+                "Retrieving metadata... This may take some time for a"
                 "large number of files or files on a hard drive");
             ImGui::ProgressBar((f32)loaded_tracks / (f32)total_tracks, ImVec2(0, 0), "");
             ImGui::Text("%u / %u (%u errors)", loaded_tracks, total_tracks, errors);

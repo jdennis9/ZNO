@@ -123,7 +123,7 @@ bool show_yes_no_dialog(const char *title, const char *format, ...) {
     vsnprintf(message, sizeof(message), format, va);
     va_end(va);
     
-    return MessageBoxA(NULL, message, title, MB_YESNO) == IDYES;
+    return MessageBoxA(NULL, message, title, MB_YESNO|MB_ICONWARNING) == IDYES;
 }
 
 bool show_confirm_dialog(const char *title, const char *format, ...) {
@@ -133,7 +133,7 @@ bool show_confirm_dialog(const char *title, const char *format, ...) {
     vsnprintf(message, sizeof(message), format, va);
     va_end(va);
     
-    return MessageBoxA(NULL, message, title, MB_OKCANCEL) == IDOK;
+    return MessageBoxA(NULL, message, title, MB_OKCANCEL|MB_ICONWARNING) == IDOK;
 }
 
 bool does_file_exist(const wchar_t *path) {
