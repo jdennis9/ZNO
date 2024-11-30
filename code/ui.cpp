@@ -187,6 +187,7 @@ const char *get_window_name(int window) {
         case WINDOW_THEME_EDITOR: return "Theme";
         case WINDOW_METADATA_EDITOR: return "Edit Metadata";
         case WINDOW_V_SPECTRUM: return "Spectrum";
+        case WINDOW_V_PEAK: return "Peak Meter";
     }
     
     return NULL;
@@ -207,6 +208,7 @@ const char *get_window_internal_name(int window) {
         case WINDOW_THEME_EDITOR: return "ThemeEditor";
         case WINDOW_METADATA_EDITOR: return "MetadataEditor";
         case WINDOW_V_SPECTRUM: return "Spectrum";
+        case WINDOW_V_PEAK: return "ChannelPeaks";
     }
     
     return NULL;
@@ -1160,6 +1162,7 @@ void init_ui() {
     ui.window_show_fn[WINDOW_ALBUM_LIST] = &show_album_list_view;
     ui.window_show_fn[WINDOW_METADATA_EDITOR] = &show_metadata_editor;
     ui.window_show_fn[WINDOW_V_SPECTRUM] = &show_spectrum_ui;
+    ui.window_show_fn[WINDOW_V_PEAK] = &show_channel_peaks_ui;
     
     ui.window_flags[WINDOW_METADATA] = ImGuiWindowFlags_AlwaysVerticalScrollbar;
     

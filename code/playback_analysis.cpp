@@ -57,7 +57,7 @@ struct Spectrum {
 
 struct Playback_Metrics {
     Spectrum spectrum;
-    f32 peak;
+    f32 peak[MAX_AUDIO_CHANNELS];
     bool need_update_peak;
     bool need_update_spectrum;
 };
@@ -94,18 +94,26 @@ static void free_windowed_view(Playback_Buffer_View *view) {
 
 f32 get_playback_peak() {
     g_metrics.need_update_peak = true;
-    return g_metrics.peak;
+    f32 sum = 0.f;
+    i32 channels = g_buffer.channels;
+
+    for (u32 i = 0; i < channels; ++i) {
+        sum += g_metrics.peak[i];
+    }
+
+    return sum / channels;
 }
 
-f32 calc_frame_peak(Playback_Buffer_View *view) {
-    f32 peak = 0.f;
-    const f32 *buffer = view->data[0];
-    
-    for (i32 i = 0; i < view->frame_count; ++i) {
-        f32 v = fabsf(buffer[i]);
-        peak = MAX(v, peak);
+void calc_frame_peak(Playback_Buffer_View *view, f32 *out) {
+
+    for (i32 ch = 0; ch < view->channels; ++ch) {
+        const f32 *buffer = view->data[ch];
+        out[ch] = 0.f;
+        for (i32 i = 0; i < view->frame_count; ++i) {
+            f32 v = fabsf(buffer[i]);
+            out[ch] = MAX(v, out[ch]);
+        }
     }
-    return peak;
 }
 
 static void calc_spectrum(Playback_Buffer_View *view, Spectrum *sg) {
@@ -200,13 +208,19 @@ void show_spectrum_ui() {
     ui_pop_mini_font();
 }
 
+void show_channel_peaks_ui() {
+    ImVec2 region = ImGui::GetContentRegionAvail();
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
+    ImGui::PlotHistogram("##peak", g_metrics.peak, g_buffer.channels, 0, NULL, 0.f, 1.f, region);
+    ImGui::PopStyleColor();
+}
+
 void update_playback_analyzers(f32 delta_ms) {
     u32 rounded_delta = (u32)ceilf(delta_ms);
     playback_update_capture_buffer(&g_buffer);
     
     Playback_Buffer_View windowed_view = {};
     Playback_Buffer_View view = {};
-    f32 peak = 0.f;
     u32 frames_wanted = (g_buffer.sample_rate/1000)*rounded_delta;
     get_playback_buffer_view(&g_buffer, frames_wanted, &view);
     
@@ -215,7 +229,11 @@ void update_playback_analyzers(f32 delta_ms) {
             g_metrics.spectrum.peaks[i] = lerp(g_metrics.spectrum.peaks[i], 0, delta_ms*SPECTRUM_ROUGHNESS);
         }
 
-        g_metrics.peak = lerp(g_metrics.peak, 0, delta_ms*PEAK_ROUGHNESS);
+        //g_metrics.peak = lerp(g_metrics.peak, 0, delta_ms*PEAK_ROUGHNESS);
+
+        for (int i = 0; i < g_buffer.channels; ++i) {
+            g_metrics.peak[i] = lerp(g_metrics.peak[i], 0.f, delta_ms*PEAK_ROUGHNESS);
+        }
 
         return;
     }
@@ -225,7 +243,11 @@ void update_playback_analyzers(f32 delta_ms) {
 
     if (g_metrics.need_update_peak) {
         g_metrics.need_update_peak = false;
-        g_metrics.peak = lerp(g_metrics.peak, calc_frame_peak(&view), delta_ms*PEAK_ROUGHNESS);
+        f32 cur_peak[MAX_AUDIO_CHANNELS];
+        calc_frame_peak(&view, cur_peak);
+        for (int ch = 0; ch < g_buffer.channels; ++ch) {
+            g_metrics.peak[ch] = lerp(g_metrics.peak[ch], cur_peak[ch], delta_ms*PEAK_ROUGHNESS);
+        }
     }
 
     if (g_metrics.need_update_spectrum) {
