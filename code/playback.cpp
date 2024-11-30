@@ -212,6 +212,7 @@ void playback_set_paused(bool value) {
     if (g_paused != value) {
         g_paused = value;
         interrupt_audio_stream(&g_stream);
+        notify(NOTIFY_PLAYBACK_STATE_CHANGE);
     }
 }
 

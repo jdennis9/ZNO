@@ -525,6 +525,11 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             return 0;
         }
 
+        case WM_USER+NOTIFY_PLAYBACK_STATE_CHANGE: {
+            update_media_controls_state();
+            return 0;
+        }
+
         case WM_USER+NOTIFY_NEW_TRACK_PLAYING: {
             update_media_controls_metadata(ui_get_playing_track());
             update_media_controls_state();
