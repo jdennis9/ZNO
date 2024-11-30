@@ -144,7 +144,7 @@ const static Track_List_Column TRACK_COLUMNS[] = {
 };
 
 static void show_track_range(Playlist& playlist, u32 start, 
-                             u32 end_exclusive, Track current_track, Track_List_Action *action, bool no_edit) {
+                             u32 end_exclusive, Track current_track, Track_List_Action *action, bool no_edit, bool scroll_to_current) {
     u32 playlist_id = playlist.get_id();
     bool want_remove = false;
     Metadata metadata;
@@ -186,6 +186,11 @@ static void show_track_range(Playlist& playlist, u32 start,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
                 select_track_in_playlist(playlist, i_track);
             }
+        }
+
+        // Scroll to track
+        if (is_playing && scroll_to_current) {
+            ImGui::SetScrollHereY();
         }
         
         // Drag-drop
@@ -285,12 +290,22 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
     const ImGuiStyle& style = ImGui::GetStyle();
     const bool no_edit = (flags & TRACK_LIST_FLAGS_NO_EDIT) != 0;
     bool focused = false;
+    bool scroll_to_current = false;
     
     if (ImGui::BeginTable(str_id, 4, table_flags)) {
         focused = ImGui::IsWindowFocused();
         
+        if (focused) {
+            if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_A)) {
+                select_whole_playlist(playlist);
+            }
+            else if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Space)) {
+                scroll_to_current = true;
+            }
+        }
+
         // Set up columns
-        for (auto col : TRACK_COLUMNS) {
+        for (const auto& col : TRACK_COLUMNS) {
             ImGuiTableColumnFlags flags = col.flags;
             if (!no_sort && col.sort_metric && (playlist.sort_metric == col.sort_metric)) {
                 flags |= ImGuiTableColumnFlags_DefaultSort;
@@ -306,8 +321,10 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
         ImGui::TableSetupScrollFreeze(1, 1);
         ImGui::TableHeadersRow();
         
-        if (playlist.filter[0]) {
-            show_track_range(playlist, 0, playlist.tracks.count, current_track, action, no_edit);
+        // Can't use a list clipper when we want to scroll to the current track because
+        // the track will just be clipped out
+        if (playlist.filter[0] || scroll_to_current) {
+            show_track_range(playlist, 0, playlist.tracks.count, current_track, action, no_edit, scroll_to_current);
         } else {
             // Cull out non-visible tracks
             ImGuiListClipper clipper = ImGuiListClipper();
@@ -315,7 +332,7 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
             
             // Show visible tracks
             if (playlist.tracks.count) while (clipper.Step()) {
-                show_track_range(playlist, clipper.DisplayStart, clipper.DisplayEnd, current_track, action, no_edit);
+                show_track_range(playlist, clipper.DisplayStart, clipper.DisplayEnd, current_track, action, no_edit, scroll_to_current);
             }
         }
         
@@ -326,12 +343,7 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
         
         ImGui::EndTable();
     }
-    
-    if (focused) {
-        if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_A) && focused) {
-            select_whole_playlist(playlist);
-        }
-    }
+
     
 }
 
