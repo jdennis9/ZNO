@@ -759,20 +759,27 @@ void show_ui() {
             if (ImGui::MenuItem("Preferences")) {
                 ui.show_prefs = true;
             }
-#if 0
+
             ImGui::Separator();
             if (ImGui::MenuItem("Remove all invalid tracks")) {
-                u32 count = playlist_remove_missing_tracks(ui.library);
-                // Skip search results and queue. With the queue it doesn't matter because invalid
-                // tracks will just be skipped anyway.
+                const char *confirmation_notice =
+                    "Remove all missing/invalid tracks? This cannot be undone."
+                    "This may take a while for a large library."
+                    ;
 
-                for (u32 i = 0; i < ui.user_playlists.count; ++i) {
-                    playlist_remove_missing_tracks(ui.user_playlists[i]);
+                if (show_confirm_dialog("Confirm remove invalid tracks", confirmation_notice)) {
+                    u32 count = playlist_remove_missing_tracks(ui.library);
+                    // Skip search results and queue. With the queue it doesn't matter because invalid
+                    // tracks will just be skipped anyway.
+
+                    for (u32 i = 0; i < ui.user_playlists.count; ++i) {
+                        playlist_remove_missing_tracks(ui.user_playlists[i]);
+                    }
+
+                    show_message_box(MESSAGE_BOX_TYPE_INFO, "Removed %u tracks", count);
                 }
-
-                show_message_box(MESSAGE_BOX_TYPE_INFO, "Removed %u tracks", count);
             }
-#endif
+
             ImGui::Separator();
             if (ImGui::MenuItem("Minimize to tray")) {
                 notify(NOTIFY_MINIMIZE_TO_TRAY);
