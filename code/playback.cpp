@@ -26,16 +26,14 @@
 #include <math.h>
 #include <string.h>
 
-#define CAPTURE_CHANNELS PLAYBACK_CAPTURE_CHANNELS
-
 struct Buffer_View {
     i32 first_frame;
     i32 last_frame;
 };
 
 struct Capture_Buffer {
-    Array<float> next[CAPTURE_CHANNELS];
-    Array<float> prev[CAPTURE_CHANNELS];
+    Array<float> next[MAX_AUDIO_CHANNELS];
+    Array<float> prev[MAX_AUDIO_CHANNELS];
     u64 timestamp;
     u64 first_frame;
 };
@@ -88,7 +86,7 @@ bool playback_update_capture_buffer(Playback_Buffer *buffer) {
     
     if (g_paused) {
         buffer->frame_count = 0;
-        for (u32 i = 0; i < CAPTURE_CHANNELS; ++i) {
+        for (u32 i = 0; i < buffer->channels; ++i) {
             buffer->data[i].clear();
         }
 
@@ -100,11 +98,12 @@ bool playback_update_capture_buffer(Playback_Buffer *buffer) {
         return true;
     }
     
+    buffer->channels = g_stream.channel_count;
     buffer->timestamp = g_capture.timestamp;
     buffer->sample_rate = g_stream.sample_rate;
     buffer->frame_count = g_capture.next[0].count + g_capture.prev[0].count;
     
-    for (i32 i = 0; i < CAPTURE_CHANNELS; ++i) {
+    for (i32 i = 0; i < buffer->channels; ++i) {
         buffer->data[i].clear();
         g_capture.prev[i].copy_to(buffer->data[i]);
         g_capture.next[i].copy_to(buffer->data[i]);
@@ -127,8 +126,9 @@ bool get_playback_buffer_view(Playback_Buffer *buffer, i32 frame_count, Playback
     if (frame_count < 0) return false;
     
     view->frame_count = frame_count;
-    
-    for (i32 i = 0; i < CAPTURE_CHANNELS; ++i) {
+    view->channels = buffer->channels;
+
+    for (i32 i = 0; i < buffer->channels; ++i) {
         view->data[i] = &buffer->data[i].data[first_frame];
     }
     
@@ -148,28 +148,33 @@ void audio_stream_callback(void *user_data, f32 *output_buffer, const Audio_Buff
     Decode_Status status = decoder_decode(dec, output_buffer, spec->frame_count, spec->channel_count, spec->sample_rate);
     if (status == DECODE_STATUS_EOF) notify(NOTIFY_REQUEST_NEXT_TRACK);
     
+    i32 channels = g_stream.channel_count;
+
     if (g_capture.next[0].count > 0) {
-        for (i32 i = 0; i < CAPTURE_CHANNELS; ++i) {
+        for (i32 i = 0; i < channels; ++i) {
             g_capture.prev[i].clear();
             g_capture.next[i].copy_to(g_capture.prev[i]);
         }
         
-        deinterlace_buffer(output_buffer, 
-                           spec->frame_count, 
-                           spec->channel_count, 
-                           CAPTURE_CHANNELS, 
-                           g_capture.next);
+        deinterlace_buffer(
+            output_buffer,
+            spec->frame_count,
+            spec->channel_count,
+            channels,
+            g_capture.next);
         
         f32 buffer_seconds = (f32)spec->frame_count/spec->sample_rate;
         u64 buffer_ticks = (u64)(buffer_seconds * perf_time_frequency());
         g_capture.timestamp = perf_time_now() - (buffer_ticks/2);
     }
     else {
-        deinterlace_buffer(output_buffer, 
-                           spec->frame_count, 
-                           spec->channel_count, 
-                           CAPTURE_CHANNELS, 
-                           g_capture.next);
+        deinterlace_buffer(
+            output_buffer,
+            spec->frame_count,
+            spec->channel_count,
+            channels,
+            g_capture.next);
+
         g_capture.timestamp = perf_time_now();
     }
 }

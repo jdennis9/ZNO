@@ -22,7 +22,7 @@
 
 #include "defines.h"
 
-#define MAX_AUDIO_CHANNELS 2
+#define MAX_AUDIO_CHANNELS 8
 
 struct Audio_Buffer_Spec {
     i32 frame_count;

@@ -66,12 +66,13 @@ static Playback_Buffer g_buffer;
 static Playback_Metrics g_metrics;
 
 static void hann_window(Playback_Buffer_View *in, Playback_Buffer_View *out) {
-    f32 *out_data[CAPTURE_CHANNELS];
+    f32 *out_data[MAX_AUDIO_CHANNELS];
     const int n = in->frame_count;
 
     out->frame_count = in->frame_count;
+    out->channels = in->channels;
 
-    for (int channel = 0; channel < CAPTURE_CHANNELS; ++channel) {
+    for (int channel = 0; channel < in->channels; ++channel) {
         out_data[channel] = (f32 *)malloc(sizeof(f32) * in->frame_count);
         f32 *channel_data = out_data[channel];
         memcpy(channel_data, in->data[channel], n * sizeof(f32));
@@ -86,7 +87,7 @@ static void hann_window(Playback_Buffer_View *in, Playback_Buffer_View *out) {
 }
 
 static void free_windowed_view(Playback_Buffer_View *view) {
-    for (int i = 0; i < CAPTURE_CHANNELS; ++i) {
+    for (int i = 0; i < view->channels; ++i) {
        free((void*)view->data[i]);
     }
 }

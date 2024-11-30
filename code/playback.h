@@ -22,8 +22,6 @@
 #include "audio.h"
 #include "array.h"
 
-#define PLAYBACK_CAPTURE_CHANNELS 2
-
 enum Playback_State {
     PLAYBACK_STATE_STOPPED,
     PLAYBACK_STATE_PAUSED,
@@ -31,15 +29,17 @@ enum Playback_State {
 };
 
 struct Playback_Buffer {
-    Array<float> data[PLAYBACK_CAPTURE_CHANNELS];
+    Array<float> data[MAX_AUDIO_CHANNELS];
     u64 timestamp;
     i32 frame_count;
     i32 sample_rate;
+    i32 channels;
 };
 
 struct Playback_Buffer_View {
-    const f32 *data[PLAYBACK_CAPTURE_CHANNELS];
+    const f32 *data[MAX_AUDIO_CHANNELS];
     i32 frame_count;
+    i32 channels;
 };
 
 void playback_init();
