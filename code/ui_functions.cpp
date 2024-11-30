@@ -290,7 +290,8 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
     const ImGuiStyle& style = ImGui::GetStyle();
     const bool no_edit = (flags & TRACK_LIST_FLAGS_NO_EDIT) != 0;
     bool focused = false;
-    bool scroll_to_current = false;
+    bool want_scroll_to_playing_track = false;
+    i32 index_of_track_to_scroll_to = -1;
     
     if (ImGui::BeginTable(str_id, 4, table_flags)) {
         focused = ImGui::IsWindowFocused();
@@ -300,7 +301,9 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
                 select_whole_playlist(playlist);
             }
             else if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Space)) {
-                scroll_to_current = true;
+                want_scroll_to_playing_track = true;
+                index_of_track_to_scroll_to = playlist.index_of_track(current_track);
+                if (index_of_track_to_scroll_to < 0) want_scroll_to_playing_track = false;
             }
         }
 
@@ -320,19 +323,19 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
         
         ImGui::TableSetupScrollFreeze(1, 1);
         ImGui::TableHeadersRow();
-        
-        // Can't use a list clipper when we want to scroll to the current track because
-        // the track will just be clipped out
-        if (playlist.filter[0] || scroll_to_current) {
-            show_track_range(playlist, 0, playlist.tracks.count, current_track, action, no_edit, scroll_to_current);
+
+        if (playlist.filter[0]) {
+            show_track_range(playlist, 0, playlist.tracks.count, current_track, action, no_edit, want_scroll_to_playing_track);
         } else {
             // Cull out non-visible tracks
             ImGuiListClipper clipper = ImGuiListClipper();
             clipper.Begin(playlist.tracks.count);
             
+            if (want_scroll_to_playing_track) clipper.ForceDisplayRangeByIndices(index_of_track_to_scroll_to, index_of_track_to_scroll_to);
+
             // Show visible tracks
             if (playlist.tracks.count) while (clipper.Step()) {
-                show_track_range(playlist, clipper.DisplayStart, clipper.DisplayEnd, current_track, action, no_edit, scroll_to_current);
+                show_track_range(playlist, clipper.DisplayStart, clipper.DisplayEnd, current_track, action, no_edit, want_scroll_to_playing_track);
             }
         }
         
