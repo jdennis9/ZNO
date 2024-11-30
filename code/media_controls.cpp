@@ -57,11 +57,11 @@ void update_media_controls_metadata(Track track) {
    
     // Strings need to be converted to utf16
     wchar_t str_buf[128];
-    utf8_to_wchar(md.artist, str_buf, LENGTH_OF_ARRAY(str_buf));
+    utf8_to_wchar(md.artist, str_buf, ARRAY_LENGTH(str_buf));
     updater.MusicProperties().Artist(str_buf);
-    utf8_to_wchar(md.album, str_buf, LENGTH_OF_ARRAY(str_buf));
+    utf8_to_wchar(md.album, str_buf, ARRAY_LENGTH(str_buf));
     updater.MusicProperties().AlbumTitle(str_buf);
-    utf8_to_wchar(md.title, str_buf, LENGTH_OF_ARRAY(str_buf));
+    utf8_to_wchar(md.title, str_buf, ARRAY_LENGTH(str_buf));
     updater.MusicProperties().Title(str_buf);
     updater.Update();
 }

@@ -783,7 +783,7 @@ void set_window_title_message(const char *format, ...) {
     vsnprintf(formatted_message, sizeof(formatted_message), format, va);
     va_end(va);
     
-    _snwprintf(title, LENGTH_OF_ARRAY(title), L"ZNO MP " APP_VERSION_STRING "  |  %hs", formatted_message);
+    _snwprintf(title, ARRAY_LENGTH(title), L"ZNO MP " APP_VERSION_STRING "  |  %hs", formatted_message);
     SetWindowTextW(g_hwnd, title);
 }
 

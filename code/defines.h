@@ -61,7 +61,7 @@ typedef double f64;
 #define wlog_info(...) printf("info: "); wprintf_s(__VA_ARGS__)
 
 // Helpers
-#define LENGTH_OF_ARRAY(array) (sizeof(array) / sizeof((array)[0]))
+#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
 #define MULTIBYTE_TO_WIDE_STRING_LITERAL(str) L##str
 #define hash_string(string) XXH32(string, strlen(string), 0)
 #define hash_wstring(string) XXH32(string, wcslen(string)*sizeof(wchar_t), 0)

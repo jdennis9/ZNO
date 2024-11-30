@@ -44,7 +44,7 @@ bool video_init(void *hwnd) {
 	D3D_FEATURE_LEVEL feature_level;
 
 	HRESULT result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
-		flags, feature_levels, LENGTH_OF_ARRAY(feature_levels), D3D11_SDK_VERSION,
+		flags, feature_levels, ARRAY_LENGTH(feature_levels), D3D11_SDK_VERSION,
 		&swapchain, &g_swapchain, &g_device, &feature_level, &g_context);
 
 	if (result != S_OK) {
@@ -151,18 +151,14 @@ Texture *create_texture_from_image(Image *image) {
 
 	// Create staging texture
 	g_device->CreateTexture2D(&desc, NULL, &texture);
-	if (!texture) {
-		return NULL;
-	}
+	if (!texture) return NULL;
 	defer(texture->Release());
 
 	// Create texture used in shader
 	desc.Usage = D3D11_USAGE_DEFAULT;
 	desc.CPUAccessFlags = 0;
 	g_device->CreateTexture2D(&desc, NULL, &dst_texture);
-	if (!dst_texture) {
-		return NULL;
-	}
+	if (!dst_texture) return NULL;
 	defer(dst_texture->Release());
 
 	D3D11_MAPPED_SUBRESOURCE mapped;
@@ -184,8 +180,7 @@ Texture *create_texture_from_image(Image *image) {
 		}
 	}
 
-	g_context->Unmap(texture, D3D10CalcSubresource(0, 0, 1));
-
+	g_context->Unmap(texture, D3D11CalcSubresource(0, 0, 1));
 	g_context->CopyResource(dst_texture, texture);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC sr = {};

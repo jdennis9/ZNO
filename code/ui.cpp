@@ -139,7 +139,7 @@ static void add_to_albums(const Track& track) {
     
     Playlist& album = ui.albums[album_index];
     if (strcmp(album.creator, track_md.artist)) {
-        zero_array(album.creator, LENGTH_OF_ARRAY(album.creator));
+        zero_array(album.creator, ARRAY_LENGTH(album.creator));
         strcpy(album.creator, "Various Artists");
     }
     album.tracks.append_unique(track);
@@ -348,7 +348,7 @@ static void apply_filter_query(Playlist& playlist) {
     char filter[FILTER_STRING_MAX];
     string_to_lower(playlist.filter, filter, sizeof(filter));
     
-    zero_array(playlist.filter, LENGTH_OF_ARRAY(playlist.filter));
+    zero_array(playlist.filter, ARRAY_LENGTH(playlist.filter));
     
     output.clear();
     for (u32 i = 0; i < tracks.count; ++i) {

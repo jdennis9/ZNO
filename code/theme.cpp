@@ -72,7 +72,7 @@ static int theme_ini_handler(void *data, const char *section, const char *key, c
         }
     }
     else if (!strcmp(section, "InternalColors")) {
-        for (u32 i = 0; i < LENGTH_OF_ARRAY(g_color_info); ++i) {
+        for (u32 i = 0; i < ARRAY_LENGTH(g_color_info); ++i) {
             const Color_Info& info = g_color_info[i];
             
             if (!strcmp(key, info.ini_name)) {
@@ -170,7 +170,7 @@ void save_theme(const char *name) {
     if (!file) return;
     
     fprintf(file, "[InternalColors]\n");
-    for (u32 i = 0; i < LENGTH_OF_ARRAY(g_color_info); ++i) {
+    for (u32 i = 0; i < ARRAY_LENGTH(g_color_info); ++i) {
         const Color_Info& info = g_color_info[i];
         u32 color;
         color = ImGui::GetColorU32(g_theme_colors[info.color]);
@@ -271,7 +271,7 @@ bool show_theme_editor_gui() {
     }
     
     ImGui::SeparatorText("ZNO Colors");
-    for (u32 i = 0; i < LENGTH_OF_ARRAY(g_color_info); ++i) {
+    for (u32 i = 0; i < ARRAY_LENGTH(g_color_info); ++i) {
         int index = g_color_info[i].color;
         dirty |= ImGui::ColorEdit4(g_color_info[i].name, &g_theme_colors[index].x);
     }

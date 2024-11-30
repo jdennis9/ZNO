@@ -131,19 +131,19 @@ static COMDLG_FILTERSPEC FONT_FILE_TYPES[] = {
 static void set_filter_spec(IFileDialog *d, File_Type type) {
     switch (type) {
         case FILE_TYPE_INI: {
-            d->SetFileTypes(LENGTH_OF_ARRAY(INI_FILE_TYPES), INI_FILE_TYPES);
+            d->SetFileTypes(ARRAY_LENGTH(INI_FILE_TYPES), INI_FILE_TYPES);
             break;
         }
         case FILE_TYPE_AUDIO: {
-            d->SetFileTypes(LENGTH_OF_ARRAY(AUDIO_FILE_TYPES), AUDIO_FILE_TYPES);
+            d->SetFileTypes(ARRAY_LENGTH(AUDIO_FILE_TYPES), AUDIO_FILE_TYPES);
             break;
         }
         case FILE_TYPE_IMAGE: {
-            d->SetFileTypes(LENGTH_OF_ARRAY(IMAGE_FILE_TYPES), IMAGE_FILE_TYPES);
+            d->SetFileTypes(ARRAY_LENGTH(IMAGE_FILE_TYPES), IMAGE_FILE_TYPES);
             break;
         }
         case FILE_TYPE_FONT: {
-            d->SetFileTypes(LENGTH_OF_ARRAY(FONT_FILE_TYPES), FONT_FILE_TYPES);
+            d->SetFileTypes(ARRAY_LENGTH(FONT_FILE_TYPES), FONT_FILE_TYPES);
             break;
         }
     }
@@ -382,7 +382,7 @@ void show_last_error_in_message_box(const wchar_t *title) {
     _snwprintf(caption, 64, L"HRESULT %x", (u32)error_id);
     
     size_t size = FormatMessageW(format_flags, NULL, error_id, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                                 message, LENGTH_OF_ARRAY(message), NULL);
+                                 message, ARRAY_LENGTH(message), NULL);
     
     
     MessageBoxW(NULL, message, caption, MB_ICONERROR);
