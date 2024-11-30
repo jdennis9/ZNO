@@ -90,6 +90,10 @@ static HICON g_icon;
 static File_Drag_Drop_Payload g_drag_drop_payload;
 static bool g_have_drag_drop_payload;
 static bool g_drag_drop_done;
+#ifdef NDEBUG
+// Shared event for making sure there is only one instance of ZNO running
+static HANDLE g_foreground_event;
+#endif
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -105,6 +109,18 @@ static void remove_tray_icon();
 static void update_background();
 static void update_font();
 
+#ifdef NDEBUG
+static int foreground_listener(void *dont_care) {
+    while (1) {
+        if (WaitForSingleObject(g_foreground_event, INFINITE) == WAIT_OBJECT_0) {
+            notify(NOTIFY_BRING_WINDOW_TO_FOREGROUND);
+        }
+    }
+
+    return 0;
+}
+#endif
+
 #ifdef DEF_WIN_MAIN
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 #else
@@ -116,6 +132,23 @@ int main(int argc, char *argv[])
     HINSTANCE hInstance = GetModuleHandle(NULL);
 #endif
 
+#ifdef NDEBUG
+    // Check if there is another instance of ZNO running. If there is, send it a message to
+    // bring the window to the foreground
+    g_foreground_event = CreateEventW(NULL, FALSE, FALSE, L"ZNO_INSTANCE");
+    if (GetLastError() == ERROR_ALREADY_EXISTS) {
+        g_foreground_event = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ZNO_INSTANCE");
+        if (g_foreground_event && g_foreground_event != INVALID_HANDLE_VALUE) {
+            SetEvent(g_foreground_event);
+            CloseHandle(g_foreground_event);
+        }
+        return 0;
+    }
+    defer(CloseHandle(g_foreground_event));
+
+    Thread foreground_listener_thread = thread_create(NULL, &foreground_listener);
+    defer(thread_destroy(foreground_listener_thread));
+#endif
 
     ImGui_ImplWin32_EnableDpiAwareness();
     (void)OleInitialize(NULL);
@@ -533,6 +566,12 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
         case WM_USER+NOTIFY_NEW_TRACK_PLAYING: {
             update_media_controls_metadata(ui_get_playing_track());
             update_media_controls_state();
+            return 0;
+        }
+
+        case WM_USER+NOTIFY_BRING_WINDOW_TO_FOREGROUND: {
+            ShowWindow(hWnd, SW_SHOW);
+            SetForegroundWindow(hWnd);
             return 0;
         }
 	}
