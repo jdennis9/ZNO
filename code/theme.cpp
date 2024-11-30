@@ -46,6 +46,7 @@ static const struct Color_Info {
 
 static Array<Theme> g_themes;
 static u32 g_selected_theme;
+static char g_loaded_theme_name[MAX_THEME_NAME_LENGTH+1];
 
 static u32 flip_endian(u32 v) {
     u32 ret;
@@ -145,6 +146,7 @@ void load_theme(const char *name) {
     ini_parse(path, &theme_ini_handler, NULL);
     
     style.SeparatorTextBorderSize = 1.f;
+    strncpy0(g_loaded_theme_name, name, sizeof(g_loaded_theme_name));
 }
 
 void save_theme(const char *name) {
@@ -186,36 +188,6 @@ void save_theme(const char *name) {
     }
     
     fclose(file);
-}
-
-
-static inline float clamp(float x, float min, float max) {
-    return (x < min) ? min : ((x > max) ? max : x);
-}
-
-static inline bool editor_padding_helper(const char *text, ImVec2* val, float min, float max) {
-    if (ImGui::InputFloat(text, &val->x, 1.f, 1.f, "%.0f")) {
-        val->y = val->x = clamp(val->x, min, max);
-        return true;
-    }
-    return false;
-}
-
-static inline bool editor_padding_helper2(const char *text, ImVec2 *val, float min, float max) {
-    if (ImGui::InputFloat2(text, &val->x, "%.0f")) {
-        val->x = clamp(val->x, min, max);
-        val->y = clamp(val->y, min, max);
-        return true;
-    }
-    return false;
-}
-
-static inline bool input_float_clamped(const char *text, float *val, float min, float max) {
-    if (ImGui::InputFloat(text, val, 1.f, 1.f, "%.0f")) {
-        *val = clamp(*val, min, max);
-        return true;
-    }
-    return false;
 }
 
 bool show_theme_editor_gui() {
@@ -323,5 +295,7 @@ const char *show_theme_selector_gui() {
 }
 
 const char *get_loaded_theme() {
-    return g_themes.count ? g_themes[g_selected_theme].name : NULL;
+    u32 index = get_theme_index(g_loaded_theme_name);
+    if (index == UINT32_MAX) return NULL;
+    return g_themes[index].name;
 }
