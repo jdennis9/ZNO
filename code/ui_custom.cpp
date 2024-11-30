@@ -176,7 +176,7 @@ void peak_meter_widget(const char *str_id, ImVec2 size) {
 	int channels = get_playback_channel_peaks(peaks);
 
     if (size.y == 0.f) {
-        size.y = available_size.y;
+        size.y = available_size.y + style.FramePadding.y;
 	}
 
 	f32 bar_height = (size.y / (f32)channels) - 1;
@@ -184,24 +184,26 @@ void peak_meter_widget(const char *str_id, ImVec2 size) {
 	u32 color = ImGui::GetColorU32(ImGuiCol_PlotHistogram);
 
 	for (int ch = 0; ch < channels; ++ch) {
+		f32 peak = clamp(peaks[ch], 0.f, 1.f);
+
 		ImVec2 min = {
 			cursor.x,
 			cursor.y + y_offset,
 		};
 
 		ImVec2 max = {
-			min.x + size.x*peaks[ch],
+			min.x + size.x*peak,
 			min.y + bar_height,
 		};
 
 		ImVec2 mid_max = {
-			min.x + size.x*peaks[ch],
+			min.x + size.x*peak,
 			min.y + bar_height,
 		};
 		
 		draw_list->AddRectFilled(min, max, color);
 
-		y_offset += bar_height;
+		y_offset += bar_height + 1;
 	}
     ImGui::InvisibleButton(str_id, size);
 }
