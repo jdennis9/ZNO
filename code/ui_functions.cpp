@@ -333,7 +333,7 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
             clipper.Begin(playlist.tracks.count);
             
             if (want_scroll_to_playing_track)
-                clipper.ForceDisplayRangeByIndices(index_of_track_to_scroll_to, index_of_track_to_scroll_to);
+                clipper.ForceDisplayRangeByIndices(index_of_track_to_scroll_to, index_of_track_to_scroll_to+1);
 
             // Show visible tracks
             if (playlist.tracks.count) while (clipper.Step()) {
