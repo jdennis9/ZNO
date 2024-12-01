@@ -1058,7 +1058,7 @@ void show_ui() {
             
             if (active_last_frame && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
                 log_debug("%g\n", position);
-                playback_seek_to_millis((i64)(position * (float)playback_get_duration_millis()));
+                playback_seek_to_millis((i64)(position * (f64)playback_get_duration_millis()));
             }
             if (!active_now) position = (float)playback_get_position_millis()/(float)playback_get_duration_millis();
             
@@ -1074,10 +1074,35 @@ void show_ui() {
     //-
     // Status bar
     if (begin_status_bar()) {
+        static Playback_File_Info info;
+        static Track info_track;
+
         if (ui.current_track) {
+            if (ui.current_track != info_track) {
+                info_track = ui.current_track;
+                playback_get_file_info(&info);
+            }
+
+            const char *channel_string;
+            switch (info.channels) {
+            case 1: channel_string = "Mono"; break;
+            case 2: channel_string = "Stereo"; break;
+            case 5: channel_string = "5.1 Surround"; break;
+            case 7: channel_string = "7.1 Surround"; break;
+            default: channel_string = "Unknown"; break;
+            }
+
             Metadata md;
             library_get_track_metadata(ui.current_track, &md);
-            ImGui::Text("Now playing: %s - %s", md.artist, md.title);
+            ImGui::Text("%s - %s", md.artist, md.title);
+            ImGui::Separator();
+            ImGui::TextUnformatted(info.format);
+            ImGui::Separator();
+            ImGui::TextUnformatted(info.codec);
+            ImGui::Separator();
+            ImGui::Text("%dHz", info.samplerate);
+            ImGui::Separator();
+            ImGui::TextUnformatted(channel_string);
         }
         end_status_bar();
     }
