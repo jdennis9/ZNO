@@ -325,17 +325,22 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
         ImGui::TableHeadersRow();
 
         if (playlist.filter[0]) {
-            show_track_range(playlist, 0, playlist.tracks.count, current_track, action, no_edit, want_scroll_to_playing_track);
+            show_track_range(playlist, 0, playlist.tracks.count, current_track,
+                action, no_edit, want_scroll_to_playing_track);
         } else {
             // Cull out non-visible tracks
             ImGuiListClipper clipper = ImGuiListClipper();
             clipper.Begin(playlist.tracks.count);
             
-            if (want_scroll_to_playing_track) clipper.ForceDisplayRangeByIndices(index_of_track_to_scroll_to, index_of_track_to_scroll_to);
+            if (want_scroll_to_playing_track)
+                clipper.ForceDisplayRangeByIndices(index_of_track_to_scroll_to, index_of_track_to_scroll_to);
 
             // Show visible tracks
             if (playlist.tracks.count) while (clipper.Step()) {
-                show_track_range(playlist, clipper.DisplayStart, clipper.DisplayEnd, current_track, action, no_edit, want_scroll_to_playing_track);
+                show_track_range(
+                    playlist, clipper.DisplayStart, clipper.DisplayEnd,
+                    current_track, action, no_edit, want_scroll_to_playing_track
+                );
             }
         }
         

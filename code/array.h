@@ -29,10 +29,10 @@ struct Array {
     u32 count;
     u32 capacity;
     
-    INLINE T *begin() {return data;}
-    INLINE T const* cbegin() const {return data;}
-    INLINE T *end() {return &data[count-1];}
-    INLINE T const* cend() {return &data[count-1];};
+    INLINE T *begin() {return count ? data : NULL;}
+    INLINE T const* begin() const {return count ? data : NULL;}
+    INLINE T *end() {return count ? data + count : NULL;}
+    INLINE T const* end() const {return count ? data + count : NULL;};
     
     INLINE T& operator[](i64 index) {
         ASSERT(index >= 0 && index < (i64)count);

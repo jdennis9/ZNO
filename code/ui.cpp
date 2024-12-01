@@ -25,7 +25,7 @@
 #include "metadata.h"
 #include "main.h"
 #include "video.h"
-#include "layouts.h"
+#include "layout.h"
 #include "theme.h"
 #include "filenames.h"
 #include "platform.h"
@@ -816,6 +816,8 @@ void show_ui() {
     const ImGuiStyle& style = ImGui::GetStyle();
     const char *filter_popup_name = "Search playlist";
     ui.filter_popup_id = ImGui::GetID(filter_popup_name);
+    const char *layout_name_popup_name = "New layout";
+    ImGuiID layout_name_popup_id = ImGui::GetID(layout_name_popup_name);
 
     update_playback_analyzers(16.66f);
     
@@ -957,7 +959,22 @@ void show_ui() {
 
             ImGui::EndMenu();
         }
-        
+
+        if (ImGui::BeginMenu("Layout")) {
+            if (ImGui::BeginMenu("Load")) {
+                layout_show_selector();
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Delete")) {
+                layout_show_deleter();
+                ImGui::EndMenu();
+            }
+            if (ImGui::MenuItem("Save")) {
+                ImGui::OpenPopup(layout_name_popup_id);
+            }
+            ImGui::EndMenu();
+        }
+
         if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("About")) {
                 ui.show_about_window = true;
@@ -1093,6 +1110,45 @@ void show_ui() {
     //-
     
     //-
+    // Layout name popup
+    ImGui::SetNextWindowSize(ImVec2(400, 0));
+    if (ImGui::BeginPopupModal(layout_name_popup_name)) {
+        static char new_layout_name[64];
+        bool commit = false;
+        commit |= ImGui::InputText("##layout_name", new_layout_name, sizeof(new_layout_name), ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::SameLine();
+        if (ImGui::BeginCombo("##name_combo", "", ImGuiComboFlags_NoPreview)) {
+            const char *sel = layout_show_custom_name_selecor();
+            if (sel) strncpy0(new_layout_name, sel, sizeof(new_layout_name));
+            ImGui::EndCombo();
+        }
+        commit |= ImGui::Button("Save layout");
+
+        if (commit) {
+            i32 existing_index = layout_get_index_from_name(new_layout_name);
+            if (existing_index >= 0) {
+                bool confirm = show_confirm_dialog(
+                    "Overwrite layout",
+                    "Overwrite existing layout '%s'?",
+                    new_layout_name);
+                if (confirm) {
+                    layout_overwrite_with_current(existing_index);
+                    memset(new_layout_name, 0, sizeof(new_layout_name));
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            else {
+                layout_save_current(new_layout_name);
+                memset(new_layout_name, 0, sizeof(new_layout_name));
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        ImGui::EndPopup();
+    }
+    //-
+
+    //-
     // Show visible windows
     for (u32 i = 0; i < WINDOW__COUNT; ++i) {
         if (!ui.show_window[i]) continue;
@@ -1208,9 +1264,7 @@ void init_ui() {
     
     ui.window_flags[WINDOW_METADATA] = ImGuiWindowFlags_AlwaysVerticalScrollbar;
     
-    if (!does_file_exist(L"imgui.ini")) {
-        ImGui::LoadIniSettingsFromMemory(DEFAULT_LAYOUT_INI);
-    }
+    layout_init();
     
     load_state();
     atexit(&save_all_state);
