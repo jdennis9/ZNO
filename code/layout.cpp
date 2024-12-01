@@ -87,6 +87,8 @@ void layout_show_deleter() {
         wchar_t path[PATH_LENGTH] = {};
         _snwprintf(path, PATH_LENGTH-1, L"%s/%hs.ini", LAYOUTS_PATH, layout.name);
         delete_file(path);
+
+        g_custom_layouts.ordered_remove(delete_index);
     }
 }
 
