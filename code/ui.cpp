@@ -1559,7 +1559,7 @@ static void show_file_info() {
         ImGui::TableSetColumnIndex(0);
         ImGui::TextUnformatted("Size");
         ImGui::TableSetColumnIndex(1);
-        ImGui::Text("%.2gMB", (f64)(info.st.st_size)/(f64)(1<<20));
+        ImGui::Text("%.2fMB", (f64)(info.st.st_size)/(f64)(1<<20));
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
