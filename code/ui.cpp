@@ -1115,6 +1115,8 @@ void show_ui() {
     if (ImGui::BeginPopupModal(layout_name_popup_name)) {
         static char new_layout_name[64];
         bool commit = false;
+        bool close = false;
+
         commit |= ImGui::InputText("##layout_name", new_layout_name, sizeof(new_layout_name), ImGuiInputTextFlags_EnterReturnsTrue);
         ImGui::SameLine();
         if (ImGui::BeginCombo("##name_combo", "", ImGuiComboFlags_NoPreview)) {
@@ -1123,6 +1125,9 @@ void show_ui() {
             ImGui::EndCombo();
         }
         commit |= ImGui::Button("Save layout");
+        ImGui::SameLine();
+        close |= ImGui::Button("Cancel");
+        close |= ImGui::IsKeyPressed(ImGuiKey_Escape);
 
         if (commit) {
             i32 existing_index = layout_get_index_from_name(new_layout_name);
@@ -1133,15 +1138,20 @@ void show_ui() {
                     new_layout_name);
                 if (confirm) {
                     layout_overwrite_with_current(existing_index);
-                    memset(new_layout_name, 0, sizeof(new_layout_name));
-                    ImGui::CloseCurrentPopup();
+                    close = true;
+
                 }
             }
             else {
                 layout_save_current(new_layout_name);
-                memset(new_layout_name, 0, sizeof(new_layout_name));
-                ImGui::CloseCurrentPopup();
+                close = true;
             }
+        }
+
+
+        if (close) {
+            memset(new_layout_name, 0, sizeof(new_layout_name));
+            ImGui::CloseCurrentPopup();
         }
 
         ImGui::EndPopup();
