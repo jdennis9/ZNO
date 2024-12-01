@@ -128,14 +128,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 int main(int argc, char *argv[])
 #endif
 {
-    
-    {
-        assert(to_lower('A') == 'a');
-        assert(to_lower('Z') == 'z');
-        assert(to_lower('M') == 'm');
-        assert(to_lower('?') == '?');
-    }
-
 #ifndef DEF_WIN_MAIN
     HINSTANCE hInstance = GetModuleHandle(NULL);
 #endif

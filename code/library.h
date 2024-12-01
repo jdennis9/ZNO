@@ -24,13 +24,6 @@
 // 0 means invalid track
 typedef u32 Track;
 
-static inline bool case_insensitive_string_equal(const wchar_t *a, const wchar_t *b) {
-    for (; *a && *b; ++a, ++b) {
-        if (to_lower(*a) != to_lower(*b)) return false;
-    }
-    return !*a && !*b;
-}
-
 // Guess from file extension whether a file is supported
 // @NOTE: This needs to be maintained within platform.cpp (AUDIO_FILE_TYPES)
 static bool is_supported_file(const wchar_t *path) {
@@ -38,12 +31,12 @@ static bool is_supported_file(const wchar_t *path) {
     if (!extension) return false;
 
     return 
-        case_insensitive_string_equal(extension, L".mp3") ||
-        case_insensitive_string_equal(extension, L".aiff") ||
-        case_insensitive_string_equal(extension, L".flac") ||
-        case_insensitive_string_equal(extension, L".opus") ||
-        case_insensitive_string_equal(extension, L".ape") ||
-        case_insensitive_string_equal(extension, L".wav");
+        string_equal_ignoring_case(extension, L".mp3") ||
+        string_equal_ignoring_case(extension, L".aiff") ||
+        string_equal_ignoring_case(extension, L".flac") ||
+        string_equal_ignoring_case(extension, L".opus") ||
+        string_equal_ignoring_case(extension, L".ape") ||
+        string_equal_ignoring_case(extension, L".wav");
 }
 
 Track library_add_track(const wchar_t *path);
