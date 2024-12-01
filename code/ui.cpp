@@ -32,6 +32,8 @@
 #include <ini.h>
 #include <imgui.h>
 #include <atomic>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #define PLAYLIST_DIRECTORY "Playlists"
 #define PLAYLIST_DIRECTORY_W L"Playlists"
@@ -128,6 +130,7 @@ static UI_State ui;
 
 static void show_prefs_editor();
 static void show_hotkey_editor();
+static void show_file_info();
 static void update_detailed_metadata();
 static void save_all_state();
 static void show_about();
@@ -190,6 +193,7 @@ const char *get_window_name(int window) {
         case WINDOW_PLAYLIST_TRACKS: return "Playlist";
         case WINDOW_THEME_EDITOR: return "Theme";
         case WINDOW_METADATA_EDITOR: return "Edit Metadata";
+        case WINDOW_FILE_INFO: return "File";
         case WINDOW_V_SPECTRUM: return "Spectrum";
         case WINDOW_V_PEAK: return "Peak Meter";
     }
@@ -211,6 +215,7 @@ const char *get_window_internal_name(int window) {
         case WINDOW_PLAYLIST_TRACKS: return "PlaylistTracks";
         case WINDOW_THEME_EDITOR: return "ThemeEditor";
         case WINDOW_METADATA_EDITOR: return "MetadataEditor";
+        case WINDOW_FILE_INFO: return "FileInfo";
         case WINDOW_V_SPECTRUM: return "Spectrum";
         case WINDOW_V_PEAK: return "ChannelPeaks";
     }
@@ -1269,6 +1274,7 @@ void init_ui() {
     ui.window_show_fn[WINDOW_THEME_EDITOR] = &show_theme_editor;
     ui.window_show_fn[WINDOW_ALBUM_LIST] = &show_album_list_view;
     ui.window_show_fn[WINDOW_METADATA_EDITOR] = &show_metadata_editor;
+    ui.window_show_fn[WINDOW_FILE_INFO] = &show_file_info;
     ui.window_show_fn[WINDOW_V_SPECTRUM] = &show_spectrum_ui;
     ui.window_show_fn[WINDOW_V_PEAK] = &show_channel_peaks_ui;
     
@@ -1519,6 +1525,72 @@ static void show_hotkey_editor() {
         
         ImGui::EndTable();
     }
+}
+
+static void show_file_info() {
+    static Track info_track;
+    static struct {
+        char path[PATH_LENGTH];
+        struct _stat st;
+        Playback_File_Info audio;
+    } info;
+
+    if (ui.current_track != info_track) {
+        info_track = ui.current_track;
+        if (info_track) {
+            library_get_track_path(info_track, info.path);
+            _stat(info.path, &info.st);
+            playback_get_file_info(&info.audio);
+        }
+    }
+    
+    ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg|ImGuiTableFlags_SizingStretchProp;
+    if (info_track && ImGui::BeginTable("##file_info", 2, table_flags)) {
+        ImGui::TableSetupColumn("name", 0, 0.2f);
+        ImGui::TableSetupColumn("value", 0, 0.8f);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Path");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextWrapped(info.path);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Size");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("%.2gMB", (f64)(info.st.st_size)/(f64)(1<<20));
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Format");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextUnformatted(info.audio.format);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Codec");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextUnformatted(info.audio.codec);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Sample Rate");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("%dHz", info.audio.samplerate);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Channels");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("%d", info.audio.channels);
+
+        ImGui::EndTable();
+    }
+    else {
+        ImGui::TextDisabled("No track playing");
+    }
+
 }
 
 static u32 get_highest_selection_index_before(const Playlist& playlist, const Track& track) {

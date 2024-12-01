@@ -40,6 +40,7 @@ struct Decoder {
 bool decoder_open(Decoder *dec, const wchar_t *filename);
 void decoder_close(Decoder *dec);
 Decode_Status decoder_decode(Decoder *dec, f32 *buffer, i32 frames, i32 channels, i32 samplerate);
+int decoder_get_bitrate(Decoder *dec);
 void decoder_seek_millis(Decoder *dec, i64 millis);
 i64 decoder_get_position_millis(Decoder *dec);
 

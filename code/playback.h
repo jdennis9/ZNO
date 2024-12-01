@@ -42,6 +42,13 @@ struct Playback_Buffer_View {
     i32 channels;
 };
 
+struct Playback_File_Info {
+    int channels;
+    int samplerate;
+    const char *format;
+    const char *codec;
+};
+
 void playback_init();
 bool playback_load_file(const wchar_t *path);
 void playback_unload_file();
@@ -50,6 +57,8 @@ void playback_toggle();
 Playback_State playback_get_state();
 float playback_get_volume();
 void playback_set_volume(float volume);
+int playback_get_bitrate();
+void playback_get_file_info(Playback_File_Info *info);
 u64 playback_get_duration_millis();
 i64 playback_get_position_millis();
 void playback_seek_to_millis(i64 ms);

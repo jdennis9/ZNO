@@ -83,6 +83,11 @@ void decoder_seek_millis(Decoder *dec, i64 millis) {
     dec->frame_index = sf_seek(dec->file, frame, SEEK_SET);
 }
 
+int decoder_get_bitrate(Decoder *dec) {
+    if (!dec->file) return 0;
+    return sf_current_byterate(dec->file) * 8;
+}
+
 i64 decoder_get_position_millis(Decoder *dec) {
     return (i64)(dec->frame_index / dec->info.samplerate) * 1000;
 }

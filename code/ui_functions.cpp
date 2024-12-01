@@ -160,8 +160,8 @@ static void show_track_range(Playlist& playlist, u32 start,
 
         library_get_track_metadata(track, &metadata);
         
-        if (playlist.filter[0] && !metadata_meets_filter(metadata, filter_lowercase)
-            || !ImGui::IsRectVisible(ImVec2(1, ImGui::GetFrameHeightWithSpacing()))) {
+        if (playlist.filter[0] && (!metadata_meets_filter(metadata, filter_lowercase)
+            || !ImGui::IsRectVisible(ImVec2(1, ImGui::GetFrameHeightWithSpacing())))) {
             continue;
         }
         

@@ -239,6 +239,25 @@ float playback_get_volume() {
     return get_audio_stream_volume(&g_stream);
 }
 
+int playback_get_bitrate() {
+    return decoder_get_bitrate(&g_decoder);
+}
+
+void playback_get_file_info(Playback_File_Info *info) {
+    if (!g_decoder.file) return;
+    SF_FORMAT_INFO format;
+    SF_INFO i = g_decoder.info;
+
+    info->channels = i.channels;
+    info->samplerate = i.samplerate;
+    format.format = i.format & SF_FORMAT_TYPEMASK;
+    sf_command(g_decoder.file, SFC_GET_FORMAT_INFO, &format, sizeof(format));
+    info->format = format.name;
+    format.format = i.format & SF_FORMAT_SUBMASK;
+    sf_command(g_decoder.file, SFC_GET_FORMAT_INFO, &format, sizeof(format));
+    info->codec = format.name;
+}
+
 u64 playback_get_duration_millis() {
     SF_INFO info;
     u64 seconds;
