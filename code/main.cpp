@@ -25,6 +25,7 @@
 #include "font_awesome.h"
 #include "preferences.h"
 #include "metadata.h"
+#include "util.h"
 #include <stdlib.h>
 #include <stdarg.h>
 #include <time.h>
@@ -128,6 +129,13 @@ int main(int argc, char *argv[])
 #endif
 {
     
+    {
+        assert(to_lower('A') == 'a');
+        assert(to_lower('Z') == 'z');
+        assert(to_lower('M') == 'm');
+        assert(to_lower('?') == '?');
+    }
+
 #ifndef DEF_WIN_MAIN
     HINSTANCE hInstance = GetModuleHandle(NULL);
 #endif

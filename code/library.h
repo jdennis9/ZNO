@@ -19,14 +19,14 @@
 #define LIBRARY_H
 #include "defines.h"
 #include "metadata.h"
-#include <ctype.h>
+#include "util.h"
 
 // 0 means invalid track
 typedef u32 Track;
 
 static inline bool case_insensitive_string_equal(const wchar_t *a, const wchar_t *b) {
     for (; *a && *b; ++a, ++b) {
-        if (tolower(*a) != tolower(*b)) return false;
+        if (to_lower(*a) != to_lower(*b)) return false;
     }
     return !*a && !*b;
 }

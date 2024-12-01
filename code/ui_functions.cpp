@@ -157,14 +157,16 @@ static void show_track_range(Playlist& playlist, u32 start,
         const Track& track = playlist.tracks[i_track];
         const bool is_selected = is_track_selected(track);
         const bool is_playing = current_track == track;
+
         library_get_track_metadata(track, &metadata);
         
-        if (playlist.filter[0] && !metadata_meets_filter(metadata, filter_lowercase)) {
+        if (playlist.filter[0] && !metadata_meets_filter(metadata, filter_lowercase)
+            || !ImGui::IsRectVisible(ImVec2(1, ImGui::GetFrameHeightWithSpacing()))) {
             continue;
         }
         
         ImGui::PushID((void*)(uintptr_t)i_track);
-        
+        defer(ImGui::PopID());
         ImGui::TableNextRow();
         
         if (is_playing) {
@@ -229,8 +231,6 @@ static void show_track_range(Playlist& playlist, u32 start,
         if (ImGui::TableSetColumnIndex(TRACK_COLUMN_DURATION)) {
             ImGui::TextUnformatted(metadata.duration_string);
         }
-        
-        ImGui::PopID();
     }
     
     if (want_remove) {

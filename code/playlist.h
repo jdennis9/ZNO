@@ -21,6 +21,7 @@
 #include "defines.h"
 #include "array.h"
 #include "platform.h"
+#include "util.h"
 #include "library.h"
 #include <stdlib.h>
 #include <xxhash.h>
@@ -46,23 +47,6 @@ enum {
 };
 
 #define PLAYLIST_SORT_METRIC__COUNT (SORT_METRIC__LAST+1)
-
-/*struct Track {
-    Path_Index path;
-    Metadata_Index metadata;
-    
-    INLINE bool is_null() const {
-        return metadata == 0;
-    }
-    
-    INLINE bool operator==(const Track& other) const {
-        return other.metadata == metadata && other.path == path;
-    }
-    
-    INLINE bool operator!=(const Track& other) const {
-        return other.metadata != metadata || other.path != path;
-    }
-};*/
 
 static inline const char *sort_metric_to_string(int metric) {
     switch (metric) {
@@ -180,33 +164,6 @@ struct Playlist {
         return index;
     }
 };
-
-
-static inline void string_to_lower(const char *in, char *out, int out_size) {
-    int i = 0;
-    int max = out_size - 1;
-    for (i = 0; (i < max) && *in; ++i) {
-        out[i] = tolower(in[i]);
-    }
-    
-    out[i] = 0;
-}
-
-static inline bool string_contains_string_ignoring_case(const char *haystack, const char *needle) {
-	const char *n, *h;
-    
-	for (; *haystack; ++haystack) {
-		n = needle;
-		h = haystack;
-		while (*h && (tolower(*h) == tolower(*n))) {
-			n++;
-			h++;
-			if (*n == 0) return true;
-		}
-	}
-    
-	return false;
-}
 
 static bool metadata_meets_filter(const Metadata& md, const char *filter) {
     if (md.title[0] && string_contains_string_ignoring_case(md.title, filter))
