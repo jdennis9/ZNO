@@ -1659,7 +1659,10 @@ static void show_wave_bar() {
     u32 total;
     if (get_waveform_preview(&buffer, &calculated, &total)) {
         f32 position = (float)playback_get_position_millis()/(float)playback_get_duration_millis();
-        waveform_preview_widget("##waveform", buffer, calculated, total, &position);
+        if (waveform_preview_widget("##waveform", buffer, calculated, total, &position)) {
+            i64 position_millis = (f64)playback_get_duration_millis() * position;
+            playback_seek_to_millis(position_millis);
+        }
     }
 }
 

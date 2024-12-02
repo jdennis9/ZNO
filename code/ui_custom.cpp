@@ -208,7 +208,8 @@ void peak_meter_widget(const char *str_id, ImVec2 size) {
     ImGui::InvisibleButton(str_id, size);
 }
 
-void waveform_preview_widget(const char *str_id, f32 *buffer, u32 calculated_samples, u32 total_samples, f32 *p_position, ImVec2 size) {
+bool waveform_preview_widget(const char *str_id, f32 *buffer, u32 calculated_samples,
+    u32 total_samples, f32 *p_position, ImVec2 size) {
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
     ImVec2 available_size = ImGui::GetContentRegionAvail();
     ImVec2 cursor = ImGui::GetCursorScreenPos();
@@ -247,6 +248,46 @@ void waveform_preview_widget(const char *str_id, f32 *buffer, u32 calculated_sam
         draw_list->AddRectFilled(min, max, ImGui::GetColorU32(color));
         x_pos += bar_width;
     }
+
+    if (ImGui::InvisibleButton(str_id, size)) {
+        ImVec2 mouse = ImGui::GetMousePos();
+        *p_position = ImClamp((mouse.x - cursor.x) / size.x, 0.f, 1.f);
+        return true;
+    }
+
+    return false;
+
+    /*ImGuiID id = ImGui::GetID(str_id);
+    bool active = id == ImGui::GetActiveID();
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+
+    ImGui::PushID(id);
+
+    if (ImGui::InvisibleButton(str_id, size)) { 
+        active = true;
+        ImGui::SetActiveID(id, window);
+    }
+
+    if (active && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+        ImVec2 mouse = ImGui::GetMousePos();
+        *p_position = ImClamp((mouse.x - cursor.x) / size.x, 0.f, 1.f);
+    }
+
+    if (active && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+        ImGui::ClearActiveID();
+        active = false;
+    }
+
+    if (active) {
+        ImGui::SetActiveID(id, window);
+    }
+
+    if (active || ImGui::IsItemHovered()) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    }
+    ImGui::PopID();
+
+    return active;*/
 }
 
 bool begin_status_bar() {
