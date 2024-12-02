@@ -218,6 +218,8 @@ bool waveform_preview_widget(const char *str_id, f32 *buffer, u32 calculated_sam
     if (size.x == 0.f) size.x = available_size.x;
     if (size.y == 0.f) size.y = available_size.y;
 
+    if (size.x == 0.f || size.y == 0.f) return false;
+
     f32 bar_width = size.x / (f32)total_samples;
     f32 bar_height = size.y * 0.5f;
     f32 middle = cursor.y + (size.y * 0.5f);
