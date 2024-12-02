@@ -25,11 +25,12 @@ struct Library {
 };
 
 static Library g_library;
+static Path_Pool g_path_pool;
 
 Track library_add_track(const wchar_t *path) {
     if (!is_supported_file(path)) return 0;
 
-    Path_Index path_index = store_file_path(path);
+    Path_Index path_index = store_file_path(g_path_pool, path);
     i32 existing_index = g_library.paths.lookup(path_index);
     if (existing_index >= 0) return existing_index+1;
     Metadata_Index md_index = read_file_metadata(path);
@@ -37,6 +38,13 @@ Track library_add_track(const wchar_t *path) {
     u32 index = g_library.paths.append(path_index);
     g_library.metadata.append(md_index);
 
+    return index + 1;
+}
+
+
+Track library_get_track_from_path_index(Path_Index path_index) {
+    i32 index = g_library.paths.lookup(path_index);
+    if (index < 0) return 0;
     return index + 1;
 }
 
@@ -55,11 +63,15 @@ Metadata_Index library_get_track_metadata_index(Track track) {
 void library_get_track_path(Track track, wchar_t *buffer) {
     ASSERT(track != 0);
     u32 path_index = g_library.paths[track-1];
-    retrieve_file_path(path_index, buffer, PATH_LENGTH);
+    retrieve_file_path(g_path_pool, path_index, buffer, PATH_LENGTH);
 }
 
 void library_get_track_path(Track track, char *buffer) {
     ASSERT(track != 0);
     u32 path_index = g_library.paths[track-1];
-    retrieve_file_path(path_index, buffer, PATH_LENGTH);
+    retrieve_file_path(g_path_pool, path_index, buffer, PATH_LENGTH);
+}
+
+const Path_Pool& library_get_path_pool() {
+    return g_path_pool;
 }

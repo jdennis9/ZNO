@@ -62,6 +62,7 @@ struct Filter_Properties {
 };
 
 struct UI_State {
+    Path_Pool path_pool;
     Array<Playlist> user_playlists;
     Array<Path_Index> user_playlist_paths;
     
@@ -133,6 +134,7 @@ static void show_prefs_editor();
 static void show_hotkey_editor();
 static void show_file_info();
 static void show_wave_bar();
+static void show_folders_view();
 static void update_detailed_metadata();
 static void save_all_state();
 static void show_about();
@@ -196,6 +198,7 @@ const char *get_window_name(int window) {
         case WINDOW_THEME_EDITOR: return "Theme";
         case WINDOW_METADATA_EDITOR: return "Edit Metadata";
         case WINDOW_FILE_INFO: return "File Info";
+        case WINDOW_FOLDERS: return "Folders";
         case WINDOW_V_SPECTRUM: return "Spectrum";
         case WINDOW_V_PEAK: return "Peak Meter";
         case WINDOW_V_WAVE_BAR: return "Wave Bar";
@@ -219,6 +222,7 @@ const char *get_window_internal_name(int window) {
         case WINDOW_THEME_EDITOR: return "ThemeEditor";
         case WINDOW_METADATA_EDITOR: return "MetadataEditor";
         case WINDOW_FILE_INFO: return "FileInfo";
+        case WINDOW_FOLDERS: return "Folders";
         case WINDOW_V_SPECTRUM: return "Spectrum";
         case WINDOW_V_PEAK: return "ChannelPeaks";
         case WINDOW_V_WAVE_BAR: return "WaveBar";
@@ -273,7 +277,7 @@ static Playlist *get_selected_user_playlist(Path_Index *path = NULL) {
 static void save_user_playlist(u32 index) {
     Playlist& playlist = ui.user_playlists[index];
     wchar_t path[PATH_LENGTH];
-    retrieve_file_path(ui.user_playlist_paths[index], path, PATH_LENGTH);
+    retrieve_file_path(ui.path_pool, ui.user_playlist_paths[index], path, PATH_LENGTH);
     save_playlist_to_file(playlist, path);
 }
 
@@ -630,7 +634,7 @@ static void show_user_playlists() {
                 save_playlist_to_file(new_playlist, save_path);
                 
                 ui.user_playlists.append(new_playlist);
-                ui.user_playlist_paths.append(store_file_path(save_path));
+                ui.user_playlist_paths.append(store_file_path(ui.path_pool, save_path));
                 
                 status_line = NULL;
                 ImGui::CloseCurrentPopup();
@@ -672,7 +676,7 @@ static void show_user_playlists() {
     if (action.user_altered_playlist) {
         wchar_t save_path[PATH_LENGTH];
         const Playlist &playlist = ui.user_playlists[action.altered_playlist_index];
-        retrieve_file_path(ui.user_playlist_paths[action.altered_playlist_index], 
+        retrieve_file_path(ui.path_pool, ui.user_playlist_paths[action.altered_playlist_index], 
                            save_path, PATH_LENGTH);
         save_playlist_to_file(playlist, save_path);
     }
@@ -682,7 +686,7 @@ static void show_user_playlists() {
         Playlist &playlist = ui.user_playlists[index];
         if (show_yes_no_dialog("Confirm Delete Playlist", "Delete playlist '%s'?", playlist.name)) {
             wchar_t save_path[PATH_LENGTH];
-            retrieve_file_path(ui.user_playlist_paths[index], 
+            retrieve_file_path(ui.path_pool, ui.user_playlist_paths[index], 
                                save_path, PATH_LENGTH);
             delete_file(save_path);
             playlist.tracks.free();
@@ -813,7 +817,7 @@ static void show_selected_playlist() {
     
     if (altered) {
         wchar_t path[PATH_LENGTH];
-        retrieve_file_path(save_path, path, PATH_LENGTH);
+        retrieve_file_path(ui.path_pool, save_path, path, PATH_LENGTH);
         save_playlist_to_file(*playlist, path);
     }
     
@@ -936,7 +940,7 @@ void show_ui() {
                 ImGui::SeparatorText(playlist->name);
                 if (show_add_files_menu(playlist)) {
                     wchar_t save_path[PATH_LENGTH];
-                    retrieve_file_path(playlist_path, save_path, PATH_LENGTH);
+                    retrieve_file_path(ui.path_pool, playlist_path, save_path, PATH_LENGTH);
                     save_playlist_to_file(*playlist, save_path);
                 }
             }
@@ -1297,7 +1301,7 @@ void init_ui() {
             wlog_debug(L"Load playlist: %s\n", path);
             if (load_playlist_from_file(path, playlist)) {
                 ui.user_playlists.append(playlist);
-                ui.user_playlist_paths.append(store_file_path(path));
+                ui.user_playlist_paths.append(store_file_path(ui.path_pool, path));
             }
             
             return RECURSE_CONTINUE;
@@ -1338,6 +1342,7 @@ void init_ui() {
     ui.window_show_fn[WINDOW_ALBUM_LIST] = &show_album_list_view;
     ui.window_show_fn[WINDOW_METADATA_EDITOR] = &show_metadata_editor;
     ui.window_show_fn[WINDOW_FILE_INFO] = &show_file_info;
+    ui.window_show_fn[WINDOW_FOLDERS] = &show_folders_view;
     ui.window_show_fn[WINDOW_V_SPECTRUM] = &show_spectrum_ui;
     ui.window_show_fn[WINDOW_V_PEAK] = &show_channel_peaks_ui;
     ui.window_show_fn[WINDOW_V_WAVE_BAR] = &show_wave_bar;
@@ -1678,6 +1683,70 @@ static void show_wave_bar() {
             i64 position_millis = (f64)playback_get_duration_millis() * position;
             playback_seek_to_millis(position_millis);
         }
+    }
+}
+
+static void show_folders_view() {
+    const Path_Pool& pool = library_get_path_pool();
+    static Playlist playlist;
+
+    if (!playlist.name[0]) playlist.set_name("#FolderView");
+
+    if (playlist.tracks.count == 0) {
+        ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg|ImGuiTableFlags_SizingStretchProp;
+        if (!ImGui::BeginTable("##folder_table", 2, table_flags)) return;
+        ImGui::TableSetupColumn("name", 0, 0.9f);
+        ImGui::TableSetupColumn("length", 0, 0.1f);
+
+        for (u32 folder_index = 0; folder_index < pool.folders.count; ++folder_index) {
+            const Folder_Entry& folder = pool.folders[folder_index];
+            char folder_name_buffer[PATH_LENGTH];
+            const char *folder_name = &pool.string_pool[folder.name];
+            int folder_name_length = strlen(folder_name);
+            strncpy0(folder_name_buffer, folder_name, PATH_LENGTH);
+            ImGui::TableNextRow();
+            
+            // Remove path separator at the end
+            char *path_sep = &folder_name_buffer[folder_name_length - 1];
+            if (*path_sep == '\\' || *path_sep == '/') {
+                *path_sep = 0;
+                folder_name_length--;
+            }
+
+            if (folder_name_length < 0) continue;
+
+            folder_name = get_file_name(folder_name_buffer);
+
+            ImGui::TableSetColumnIndex(0);
+            if (ImGui::Selectable(folder_name)) {
+                playlist.tracks.clear();
+
+                for (u32 file_index = 0; file_index < pool.files.count; ++file_index) {
+                    File_Entry file = pool.files[file_index];
+                    if (file.folder_index != folder_index) continue;
+                    Track track = library_get_track_from_path_index(file_index);
+                    if (track) playlist.tracks.append(track);
+                }
+            }
+
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%u", folder.file_count);
+        }
+
+        ImGui::EndTable();
+    }
+    else {
+        Track_List_Action action = {};
+
+        if (ImGui::Button("Go back")) {
+            playlist.tracks.clear();
+            return;
+        }
+
+        show_playlist_track_list("##track_list", playlist, ui.current_track, &action, TRACK_LIST_FLAGS_NO_EDIT);
+
+        if (action.user_requested_track)
+            play_playlist(playlist, &playlist.tracks[action.requested_track_index]);
     }
 }
 

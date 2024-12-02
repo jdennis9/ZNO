@@ -19,16 +19,35 @@
 #define FILENAMES_H
 
 #include "defines.h"
+#include "array.h"
 #include <string.h>
 
 typedef u32 Path_Index;
 
+struct Folder_Entry {
+    u32 hash;
+    u32 name;
+    u32 file_count;
+};
+
+struct File_Entry {
+    u32 hash;
+    u32 name;
+    u32 folder_index;
+};
+
 // Memory effecient way of storing file paths.
 // Never stores a folder string twice.
-Path_Index store_file_path(const char *path);
-Path_Index store_file_path(const wchar_t *path);
-void retrieve_file_path(Path_Index index, char *buffer, u32 buffer_size);
-void retrieve_file_path(Path_Index index, wchar_t *buffer, u32 buffer_size);
+struct Path_Pool {
+    Array<Folder_Entry> folders;
+    Array<File_Entry> files;
+    Array<char> string_pool;
+};
+
+Path_Index store_file_path(Path_Pool& pool, const char *path);
+Path_Index store_file_path(Path_Pool& pool, const wchar_t *path);
+void retrieve_file_path(const Path_Pool& pool, Path_Index index, char *buffer, u32 buffer_size);
+void retrieve_file_path(const Path_Pool& pool, Path_Index index, wchar_t *buffer, u32 buffer_size);
 
 static inline const char *get_file_extension(const char *path) {
     i64 length = strlen(path);

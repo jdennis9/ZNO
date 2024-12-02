@@ -19,23 +19,6 @@
 #include "array.h"
 #include <xxhash.h>
 
-struct Folder_Entry {
-    u32 hash;
-    u32 name;
-};
-
-struct File_Entry {
-    u32 hash;
-    u32 name;
-    u32 folder_index;
-};
-
-struct Path_Pool {
-    Array<Folder_Entry> folders;
-    Array<File_Entry> files;
-    Array<char> string_pool;
-};
-
 static Path_Pool g_path_pool;
 
 static u32 push_string(Array<char>& pool, const char *string, u32 length = 0) {
@@ -55,13 +38,13 @@ static i32 lookup_path(u32 hash) {
     return -1;
 }
 
-Path_Index store_file_path(const char *full_path) {
-    Path_Pool& pool = g_path_pool;
+Path_Index store_file_path(Path_Pool& pool, const char *full_path) {
     u32 full_hash = hash_string(full_path);
     
     {
         i32 index = lookup_path(full_hash);
-        if (index >= 0) return index;
+        if (index >= 0)
+            return index;
     }
     
     const char *filename = get_file_name(full_path);
@@ -89,26 +72,26 @@ Path_Index store_file_path(const char *full_path) {
     file.hash = full_hash;
     file.name = push_string(pool.string_pool, filename);
     file.folder_index = folder_index;
+    pool.folders[file.folder_index].file_count++;
     
     return pool.files.append(file);
 }
 
-Path_Index store_file_path(const wchar_t *path) {
+Path_Index store_file_path(Path_Pool& pool, const wchar_t *path) {
     char buffer[PATH_LENGTH];
     wchar_to_utf8(path, buffer, PATH_LENGTH);
-    return store_file_path(buffer);
+    return store_file_path(pool, buffer);
 }
 
-void retrieve_file_path(Path_Index index, char *buffer, u32 buffer_size) {
-    const Path_Pool& pool = g_path_pool;
+void retrieve_file_path(const Path_Pool& pool, Path_Index index, char *buffer, u32 buffer_size) {
     File_Entry file = pool.files[index];
     Folder_Entry folder = pool.folders[file.folder_index];
     snprintf(buffer, buffer_size, "%s%s", &pool.string_pool[folder.name], &pool.string_pool[file.name]);
 }
 
-void retrieve_file_path(Path_Index index, wchar_t *buffer, u32 buffer_size) {
+void retrieve_file_path(const Path_Pool& pool, Path_Index index, wchar_t *buffer, u32 buffer_size) {
     char utf8[PATH_LENGTH];
-    retrieve_file_path(index, utf8, PATH_LENGTH);
+    retrieve_file_path(pool, index, utf8, PATH_LENGTH);
     utf8_to_wchar(utf8, buffer, buffer_size);
 }
     

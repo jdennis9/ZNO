@@ -20,9 +20,11 @@
 #include "defines.h"
 #include "metadata.h"
 #include "util.h"
+#include "filenames.h"
 
 // 0 means invalid track
 typedef u32 Track;
+struct Path_Pool;
 
 // Guess from file extension whether a file is supported
 // @NOTE: This needs to be maintained within platform.cpp (AUDIO_FILE_TYPES)
@@ -40,10 +42,12 @@ static bool is_supported_file(const wchar_t *path) {
 }
 
 Track library_add_track(const wchar_t *path);
+Track library_get_track_from_path_index(Path_Index path_index);
 void library_get_track_metadata(Track track, Metadata *md);
 Metadata_Index library_get_track_metadata_index(Track track);
 // Buffer must be at least PATH_LENGTH characters
 void library_get_track_path(Track track, wchar_t *buffer);
 void library_get_track_path(Track track, char *buffer);
+const Path_Pool& library_get_path_pool();
 
 #endif
