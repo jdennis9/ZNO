@@ -19,8 +19,6 @@
 #include "array.h"
 #include <xxhash.h>
 
-static Path_Pool g_path_pool;
-
 static u32 push_string(Array<char>& pool, const char *string, u32 length = 0) {
     if (length == 0) length = (u32)strlen(string);
     u32 offset = pool.push(length+1);
@@ -29,8 +27,7 @@ static u32 push_string(Array<char>& pool, const char *string, u32 length = 0) {
     return offset;
 }
 
-static i32 lookup_path(u32 hash) {
-    const Path_Pool& pool = g_path_pool;
+static i32 lookup_path(const Path_Pool& pool, u32 hash) {
     for (u32 i = 0; i < pool.files.count; ++i) {
         if (pool.files[i].hash == hash) return i;
     }
@@ -42,7 +39,7 @@ Path_Index store_file_path(Path_Pool& pool, const char *full_path) {
     u32 full_hash = hash_string(full_path);
     
     {
-        i32 index = lookup_path(full_hash);
+        i32 index = lookup_path(pool, full_hash);
         if (index >= 0)
             return index;
     }
