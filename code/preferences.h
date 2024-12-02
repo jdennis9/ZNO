@@ -33,6 +33,7 @@ enum {
 enum {
     MENU_BAR_VISUAL_SPECTRUM = 0,
     MENU_BAR_VISUAL_PEAK_METER = 1,
+    MENU_BAR_VISUAL_WAVEFORM = 2,
     MENU_BAR_VISUAL__COUNT,
 };
 
@@ -53,14 +54,18 @@ struct Preferences {
     int icon_font_size;
     int close_policy;
     int menu_bar_visualizer;
+    int waveform_window_size;
     
     static constexpr int FONT_SIZE_MIN = 8;
     static constexpr int FONT_SIZE_MAX = 24;
+    static constexpr int WAVEFORM_WINDOW_SIZE_MIN = 10;
+    static constexpr int WAVEFORM_WINDOW_SIZE_MAX = 100;
     
     void set_defaults() {
         strcpy(font, "C:\\Windows\\Fonts\\seguisb.ttf");
         font_size = 16;
         icon_font_size = 12;
+        waveform_window_size = 40;
     }
     
     void save_to_file(const char *path) {
@@ -75,6 +80,7 @@ struct Preferences {
         fprintf(f, "iIconFontSize = %d\n", icon_font_size);
         fprintf(f, "iClosePolicy = %d\n", close_policy);
         fprintf(f, "iMenuBarVisualizer = %d\n", menu_bar_visualizer);
+        fprintf(f, "iWaveformWindowSize = %d\n", waveform_window_size);
         
         fclose(f);
     }
@@ -97,6 +103,8 @@ struct Preferences {
                 p->close_policy = clamp(atoi(value), 0, CLOSE_POLICY__COUNT-1);
             else if (!strcmp(key, "iMenuBarVisualizer"))
                 p->menu_bar_visualizer = clamp(atoi(value), 0, MENU_BAR_VISUAL__COUNT-1);
+            else if (!strcmp(key, "iWaveformWindowSize"))
+                p->waveform_window_size = clamp(atoi(value), WAVEFORM_WINDOW_SIZE_MIN, WAVEFORM_WINDOW_SIZE_MAX);
             return 1;
         };
         

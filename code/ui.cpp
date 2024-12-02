@@ -1002,13 +1002,31 @@ void show_ui() {
         
         // Menu bar visualizer
         ImGui::Separator();
+        const f32 visualizer_width = 150.f;
         switch (prefs.menu_bar_visualizer) {
         case MENU_BAR_VISUAL_PEAK_METER:
-            peak_meter_widget("##peak_meter", ImVec2(150, 0));
+            peak_meter_widget("##peak_meter", ImVec2(visualizer_width, 0));
             break;
         case MENU_BAR_VISUAL_SPECTRUM:
-            show_spectrum_widget("##spectrum", 150);
+            show_spectrum_widget("##spectrum", visualizer_width);
             break;
+        case MENU_BAR_VISUAL_WAVEFORM: {
+            static Playback_Buffer buffer;
+            playback_update_capture_buffer(&buffer);
+
+            if (buffer.frame_count) {
+                Playback_Buffer_View view;
+                int frames_wanted = (int)(((f32)buffer.sample_rate/1000.f) * (f32)prefs.waveform_window_size);
+                get_playback_buffer_view(&buffer, frames_wanted, &view);
+                ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
+                ImGui::PlotLines("##waveform", view.data[0], view.frame_count, 0, NULL, -1.f, 1.f, ImVec2(visualizer_width, 0));
+                ImGui::PopStyleColor();
+            }
+            else {
+                ImGui::InvisibleButton("##waveform", ImVec2(visualizer_width, ImGui::GetFrameHeightWithSpacing()));
+            }
+            break;
+        }
         }
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Spectrum")) {
@@ -1017,6 +1035,10 @@ void show_ui() {
             }
             if (ImGui::MenuItem("Peak Meter")) {
                 prefs.menu_bar_visualizer = MENU_BAR_VISUAL_PEAK_METER;
+                set_preferences_dirty();
+            }
+            if (ImGui::MenuItem("Wave")) {
+                prefs.menu_bar_visualizer = MENU_BAR_VISUAL_WAVEFORM;
                 set_preferences_dirty();
             }
             ImGui::EndPopup();
@@ -1108,7 +1130,6 @@ void show_ui() {
     }
     ImGui::End();
     //-
-    
 
     //-
     // Set up main dock space
@@ -1515,6 +1536,16 @@ static void show_prefs_editor() {
             ImGui::EndCombo();
         }
         
+        ImGui::SeparatorText("Visualizers");
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Waveform Window Size");
+        ImGui::TableSetColumnIndex(1);
+        apply |= ImGui::DragInt(
+            "##waveform_window_size", &prefs.waveform_window_size, 0.1f,
+            Preferences::WAVEFORM_WINDOW_SIZE_MIN, Preferences::WAVEFORM_WINDOW_SIZE_MAX, "%d ms"
+        );
+
         ImGui::EndTable();
     }
     if (apply) apply_preferences();
