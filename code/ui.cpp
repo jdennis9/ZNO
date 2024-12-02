@@ -194,7 +194,7 @@ const char *get_window_name(int window) {
         case WINDOW_PLAYLIST_TRACKS: return "Playlist";
         case WINDOW_THEME_EDITOR: return "Theme";
         case WINDOW_METADATA_EDITOR: return "Edit Metadata";
-        case WINDOW_FILE_INFO: return "File";
+        case WINDOW_FILE_INFO: return "File Info";
         case WINDOW_V_SPECTRUM: return "Spectrum";
         case WINDOW_V_PEAK: return "Peak Meter";
         case WINDOW_V_WAVE_BAR: return "Wave Bar";
@@ -858,7 +858,7 @@ void show_ui() {
         ImGui::SetNextWindowPos(window_pos);
         if (ImGui::Begin("Adding Tracks", NULL, window_flags)) {
             ImGui::TextUnformatted(
-                "Retrieving metadata... This may take some time for a"
+                "Retrieving metadata... This may take some time for a "
                 "large number of files or files on a hard drive");
             ImGui::ProgressBar((f32)loaded_tracks / (f32)total_tracks, ImVec2(0, 0), "");
             ImGui::Text("%u / %u (%u errors)", loaded_tracks, total_tracks, errors);
