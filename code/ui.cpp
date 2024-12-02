@@ -102,6 +102,7 @@ struct UI_State {
     bool ready;
     bool library_altered;
     bool shuffle_on;
+    bool queue_is_shuffled;
     bool show_prefs;
     bool show_hotkeys;
     bool show_about_window;
@@ -298,7 +299,10 @@ static void play_playlist(const Playlist& playlist, Track *start_track = NULL) {
     ui.queue.clear();
     playlist.copy_to(ui.queue);
     
-    if (ui.shuffle_on) ui.queue.shuffle();
+    if (ui.shuffle_on) {
+        ui.queue.shuffle();
+        ui.queue_is_shuffled = true;
+    } else ui.queue_is_shuffled = false;
     
     if (start_track) {
         start_index = ui.queue.index_of_track(*start_track);
@@ -1052,8 +1056,12 @@ void show_ui() {
         {
             bool paused = playback_get_state() != PLAYBACK_STATE_PLAYING;
             
-            if (ImGui::MenuItem(SHUFFLE_ICON, NULL, ui.shuffle_on))
+            if (ImGui::MenuItem(SHUFFLE_ICON, NULL, ui.shuffle_on)) {
                 ui.shuffle_on = !ui.shuffle_on;
+                if (ui.shuffle_on && !ui.queue_is_shuffled) {
+                    ui.queue.shuffle();
+                }
+            }
             if (ImGui::MenuItem(PREV_TRACK_ICON))
                 ui_play_previous_track();
             if (ImGui::MenuItem(paused ? PLAY_ICON : PAUSE_ICON)) {
