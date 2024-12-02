@@ -256,38 +256,6 @@ bool waveform_preview_widget(const char *str_id, f32 *buffer, u32 calculated_sam
     }
 
     return false;
-
-    /*ImGuiID id = ImGui::GetID(str_id);
-    bool active = id == ImGui::GetActiveID();
-    ImGuiWindow *window = ImGui::GetCurrentWindow();
-
-    ImGui::PushID(id);
-
-    if (ImGui::InvisibleButton(str_id, size)) { 
-        active = true;
-        ImGui::SetActiveID(id, window);
-    }
-
-    if (active && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-        ImVec2 mouse = ImGui::GetMousePos();
-        *p_position = ImClamp((mouse.x - cursor.x) / size.x, 0.f, 1.f);
-    }
-
-    if (active && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
-        ImGui::ClearActiveID();
-        active = false;
-    }
-
-    if (active) {
-        ImGui::SetActiveID(id, window);
-    }
-
-    if (active || ImGui::IsItemHovered()) {
-        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-    }
-    ImGui::PopID();
-
-    return active;*/
 }
 
 bool begin_status_bar() {
