@@ -29,14 +29,14 @@ void init_platform() {
 
 u32 wchar_to_utf8(const wchar_t *in, char *buffer, u32 buffer_size) {
     i32 ret = WideCharToMultiByte(CP_UTF8, 0, in, -1, buffer, buffer_size, NULL, NULL) - 1;
-	if (ret == -1) return 0;
-	return (u32)ret;
+    if (ret == -1) return 0;
+    return (u32)ret;
 }
 
 u32 utf8_to_wchar(const char *in, wchar_t *buffer, u32 buffer_size) {
     int ret = MultiByteToWideChar(CP_UTF8, 0, in, -1, buffer, buffer_size) - 1;
-	if (ret == -1) return 0;
-	return (u32)ret;
+    if (ret == -1) return 0;
+    return (u32)ret;
 }
 
 Mutex create_mutex() {

@@ -51,81 +51,81 @@ show_last_error_in_message_box(L ## #code);\
 static IMMDeviceEnumerator *g_device_enumerator;
 
 static DWORD audio_thread_entry(LPVOID user_data) {
-	WAVEFORMATEX *format;
-	u32 buffer_frame_count;
-	IMMDevice *device;
-	IAudioClient *audio_client;
-	IAudioRenderClient *render_client;
-	u8 *buffer;
-	WASAPI_Instance *instance = (WASAPI_Instance*)user_data;
+    WAVEFORMATEX *format;
+    u32 buffer_frame_count;
+    IMMDevice *device;
+    IAudioClient *audio_client;
+    IAudioRenderClient *render_client;
+    u8 *buffer;
+    WASAPI_Instance *instance = (WASAPI_Instance*)user_data;
     Audio_Buffer_Spec buffer_spec = {};
-	DWORD buffer_duration_ms;
+    DWORD buffer_duration_ms;
     
     (void)CoInitialize(NULL);
     
-	{
-		// @Note: stream is invalidated after ready semaphore is signaled
-		g_device_enumerator->GetDefaultAudioEndpoint(EDataFlow::eRender, ERole::eConsole, &device);
-		device->Activate(__uuidof(audio_client), CLSCTX_ALL, NULL, (void **)&audio_client);
-		audio_client->GetMixFormat(&format);
+    {
+        // @Note: stream is invalidated after ready semaphore is signaled
+        g_device_enumerator->GetDefaultAudioEndpoint(EDataFlow::eRender, ERole::eConsole, &device);
+        device->Activate(__uuidof(audio_client), CLSCTX_ALL, NULL, (void **)&audio_client);
+        audio_client->GetMixFormat(&format);
         
-		audio_client->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, (REFERENCE_TIME)1e7, 0, format, NULL);
-		audio_client->GetBufferSize(&buffer_frame_count);
-		audio_client->GetService(__uuidof(IAudioRenderClient), (void**)&render_client);
-		audio_client->GetService(__uuidof(IAudioStreamVolume), (void**)&instance->volume_controller);
-		render_client->GetBuffer(buffer_frame_count, &buffer);
-		render_client->ReleaseBuffer(buffer_frame_count, 0);
+        audio_client->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, (REFERENCE_TIME)1e7, 0, format, NULL);
+        audio_client->GetBufferSize(&buffer_frame_count);
+        audio_client->GetService(__uuidof(IAudioRenderClient), (void**)&render_client);
+        audio_client->GetService(__uuidof(IAudioStreamVolume), (void**)&instance->volume_controller);
+        render_client->GetBuffer(buffer_frame_count, &buffer);
+        render_client->ReleaseBuffer(buffer_frame_count, 0);
         
         buffer_duration_ms = (format->nSamplesPerSec*1000) / buffer_frame_count;
         
         buffer_spec.channel_count = format->nChannels;
-		buffer_spec.sample_rate = format->nSamplesPerSec;
+        buffer_spec.sample_rate = format->nSamplesPerSec;
         
         instance->channel_count = buffer_spec.channel_count;
         instance->sample_rate = buffer_spec.sample_rate;
-		instance->buffer_duration_ms = buffer_duration_ms;
+        instance->buffer_duration_ms = buffer_duration_ms;
         
-		// Device is ready for streaming
-		ReleaseSemaphore(instance->ready_semaphore, 1, NULL);
-	}
+        // Device is ready for streaming
+        ReleaseSemaphore(instance->ready_semaphore, 1, NULL);
+    }
     
     log_debug("WASAPI ready. Buffer length = %dms\n", buffer_duration_ms);
     
-	audio_client->Start();
-	while (1) {
-		u32 frame_padding;
-		u32 available_frames = 0;
-		u32 capture_packet_size = 0;
+    audio_client->Start();
+    while (1) {
+        u32 frame_padding;
+        u32 available_frames = 0;
+        u32 capture_packet_size = 0;
         
-		// Wait for half of buffer duration, or handle interrupt signal.
-		if (WaitForSingleObject(instance->interrupt_semaphore, buffer_duration_ms/2) 
+        // Wait for half of buffer duration, or handle interrupt signal.
+        if (WaitForSingleObject(instance->interrupt_semaphore, buffer_duration_ms/2) 
             != WAIT_TIMEOUT) {	
-			// Upon an interruption, stop the stream and reset the audio clock
-			audio_client->Stop();
-			audio_client->Reset();
-			audio_client->Start();
-		}
+            // Upon an interruption, stop the stream and reset the audio clock
+            audio_client->Stop();
+            audio_client->Reset();
+            audio_client->Start();
+        }
         
-		if (instance->want_close) break;
+        if (instance->want_close) break;
         
-		audio_client->GetCurrentPadding(&frame_padding);
-		available_frames = buffer_frame_count - frame_padding;
+        audio_client->GetCurrentPadding(&frame_padding);
+        available_frames = buffer_frame_count - frame_padding;
         
-		render_client->GetBuffer(available_frames, &buffer);
+        render_client->GetBuffer(available_frames, &buffer);
         buffer_spec.frame_count = available_frames;
         instance->callback(instance->callback_data, (f32*)buffer, &buffer_spec);
-		render_client->ReleaseBuffer(available_frames, 0);
-	}
+        render_client->ReleaseBuffer(available_frames, 0);
+    }
     
-	ReleaseSemaphore(instance->ready_semaphore, 1, 0);
-	CoTaskMemFree(format);
-	CloseHandle(instance->ready_semaphore);
-	SAFE_RELEASE(render_client);
-	SAFE_RELEASE(instance->volume_controller);
-	SAFE_RELEASE(audio_client);
-	SAFE_RELEASE(device);
+    ReleaseSemaphore(instance->ready_semaphore, 1, 0);
+    CoTaskMemFree(format);
+    CloseHandle(instance->ready_semaphore);
+    SAFE_RELEASE(render_client);
+    SAFE_RELEASE(instance->volume_controller);
+    SAFE_RELEASE(audio_client);
+    SAFE_RELEASE(device);
     
-	return 0;
+    return 0;
 }
 
 static void wasapi_interrupt(void *data) {

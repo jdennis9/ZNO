@@ -189,9 +189,9 @@ int main(int argc, char *argv[])
                              hInstance,
                              NULL);
     // Set dark title bar
-	{
-		BOOL on = TRUE;
-		DwmSetWindowAttribute(g_hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &on, sizeof(on));
+    {
+        BOOL on = TRUE;
+        DwmSetWindowAttribute(g_hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &on, sizeof(on));
     }
     
     UpdateWindow(g_hwnd);
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
     save_metadata_cache(METADATA_CACHE_PATH);
     destroy_texture(&g_background.texture);
     
-	return 0;
+    return 0;
 }
 
 static void unregister_hotkeys() {
@@ -421,8 +421,8 @@ f32 get_dpi_scale() {
 }
 
 static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-	if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-		return true;
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+        return true;
     
     // Capture next input and bind it to a hotkey
     if (g_capture_next_input && (msg == WM_KEYDOWN)) {
@@ -444,24 +444,24 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             apply_hotkeys();
         }
     }
-	
-	switch (msg) {
-		case WM_SIZE: {
-			g_window.resize_width = LOWORD(lParam);
-			g_window.resize_height = HIWORD(lParam);
-			g_window.width = g_window.resize_width;
-			g_window.height = g_window.resize_height;
-			return 0;
-		}
+    
+    switch (msg) {
+        case WM_SIZE: {
+            g_window.resize_width = LOWORD(lParam);
+            g_window.resize_height = HIWORD(lParam);
+            g_window.width = g_window.resize_width;
+            g_window.height = g_window.resize_height;
+            return 0;
+        }
         
-		case WM_GETMINMAXINFO: {
-			LPMINMAXINFO info = (LPMINMAXINFO)lParam;
-			info->ptMinTrackSize.x = 500;
-			info->ptMinTrackSize.y = 500;
-			break;
-		}
+        case WM_GETMINMAXINFO: {
+            LPMINMAXINFO info = (LPMINMAXINFO)lParam;
+            info->ptMinTrackSize.x = 500;
+            info->ptMinTrackSize.y = 500;
+            break;
+        }
         
-		case WM_CLOSE: {
+        case WM_CLOSE: {
             switch (g_prefs.close_policy) {
                 case CLOSE_POLICY_ALWAYS_ASK:
                 if (MessageBoxA(NULL, "Minimize to tray?", "Closing Player", MB_YESNO | MB_ICONQUESTION) == IDYES)
@@ -476,24 +476,24 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                 PostQuitMessage(0);
                 break;
             }
-			return 0;
-		}
+            return 0;
+        }
         
         // Handle events from tray icon
         case WM_APP + 1: {
             // User clicked on tray icon, bring the window to front
-			if (LOWORD(lParam) == WM_LBUTTONDOWN) {
-				ShowWindow(hWnd, SW_SHOW);
-				SetForegroundWindow(hWnd);
-			}
-			else if (LOWORD(lParam) == WM_RBUTTONDOWN) {
-				POINT mouse;
-				GetCursorPos(&mouse);
-				TrackPopupMenuEx(g_tray_popup, TPM_LEFTBUTTON, mouse.x, mouse.y, hWnd, NULL);
-				PostMessage(hWnd, WM_NULL, 0, 0);
-			}
-			return 0;
-		}
+            if (LOWORD(lParam) == WM_LBUTTONDOWN) {
+                ShowWindow(hWnd, SW_SHOW);
+                SetForegroundWindow(hWnd);
+            }
+            else if (LOWORD(lParam) == WM_RBUTTONDOWN) {
+                POINT mouse;
+                GetCursorPos(&mouse);
+                TrackPopupMenuEx(g_tray_popup, TPM_LEFTBUTTON, mouse.x, mouse.y, hWnd, NULL);
+                PostMessage(hWnd, WM_NULL, 0, 0);
+            }
+            return 0;
+        }
         
         // Handle context menu from tray icon
         case WM_COMMAND: {
@@ -503,11 +503,11 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             return 0;
         }
         
-		case WM_DPICHANGED: {
-			g_window.dpi_scale = ImGui_ImplWin32_GetDpiScaleForHwnd(g_hwnd);
-			g_flags.reload_font = true;
-			return 0;
-		}
+        case WM_DPICHANGED: {
+            g_window.dpi_scale = ImGui_ImplWin32_GetDpiScaleForHwnd(g_hwnd);
+            g_flags.reload_font = true;
+            return 0;
+        }
         
         case WM_HOTKEY: {
             log_debug("WM_HOTKEY: %lld\n", wParam);
@@ -527,7 +527,7 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 
         
         case WM_USER+NOTIFY_QUIT: {
-			PostQuitMessage(0);
+            PostQuitMessage(0);
             return 0;
         }
         
@@ -574,9 +574,9 @@ static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             SetForegroundWindow(hWnd);
             return 0;
         }
-	}
-	
-	return DefWindowProcW(hWnd, msg, wParam, lParam);
+    }
+    
+    return DefWindowProcW(hWnd, msg, wParam, lParam);
 }
 
 static void render_background() {
@@ -639,33 +639,33 @@ static void set_background_image(const char *path) {
 
 // Pass in NULL to load default font
 static void load_font(const char *path, int size, int icon_size, float scale) {
-	ImGuiIO& io = ImGui::GetIO();
-	ImFontConfig cfg = ImFontConfig();
+    ImGuiIO& io = ImGui::GetIO();
+    ImFontConfig cfg = ImFontConfig();
     bool load_default = false;
     float scaled_font_size = MAX(size*scale, 8.f);
     float scaled_icon_size = MAX(icon_size*scale, 8.f);
     
-	cfg.RasterizerDensity = scale;
+    cfg.RasterizerDensity = scale;
 
     video_invalidate_imgui_objects();
-	
-	io.Fonts->Clear();
-	
-	if (path) {
-		io.Fonts->AddFontFromFileTTF(path, scaled_font_size, &cfg);
-	} else load_default = true;
     
-	if (load_default) {
-		if (path) log_warning("Failed to load font %s, using fallback\n", path);
-		io.Fonts->AddFontDefault();
-	}
-	
+    io.Fonts->Clear();
+    
+    if (path) {
+        io.Fonts->AddFontFromFileTTF(path, scaled_font_size, &cfg);
+    } else load_default = true;
+    
+    if (load_default) {
+        if (path) log_warning("Failed to load font %s, using fallback\n", path);
+        io.Fonts->AddFontDefault();
+    }
+    
     static const ImWchar icon_ranges[] = {
-		0xf048, 0xf052, // playback control icons
-		0xf026, 0xf028, // volume icons
-		0xf074, 0xf074, // shuffle icon
-		0
-	};
+        0xf048, 0xf052, // playback control icons
+        0xf026, 0xf028, // volume icons
+        0xf074, 0xf074, // shuffle icon
+        0
+    };
     
     cfg.FontDataOwnedByAtlas = false; // Tell ImGui to not try to free the data after use
     cfg.MergeMode = true;
@@ -785,19 +785,19 @@ void apply_preferences() {
 }
 
 static void create_tray_icon() {
-	NOTIFYICONDATAA data = {};
-	
-	data.cbSize = sizeof(data);
-	data.hWnd = g_hwnd;
-	data.uID = 1;
-	data.uFlags = NIF_TIP | NIF_MESSAGE | NIF_ICON;
-	data.uCallbackMessage = WM_APP + 1;
-	data.uVersion = 4;
+    NOTIFYICONDATAA data = {};
+    
+    data.cbSize = sizeof(data);
+    data.hWnd = g_hwnd;
+    data.uID = 1;
+    data.uFlags = NIF_TIP | NIF_MESSAGE | NIF_ICON;
+    data.uCallbackMessage = WM_APP + 1;
+    data.uVersion = 4;
     data.hIcon = g_icon;
-	
-	strcpy(data.szTip, "Music Player");
-	
-	Shell_NotifyIconA(NIM_ADD, &data);
+    
+    strcpy(data.szTip, "Music Player");
+    
+    Shell_NotifyIconA(NIM_ADD, &data);
     
     g_tray_popup = CreatePopupMenu();
     if (g_tray_popup) {
@@ -806,13 +806,13 @@ static void create_tray_icon() {
 }
 
 static void remove_tray_icon() {
-	NOTIFYICONDATAA data = {};
-	
-	data.cbSize = sizeof(data);
-	data.hWnd = g_hwnd;
-	data.uID = 1;
-	
-	Shell_NotifyIconA(NIM_DELETE, &data);
+    NOTIFYICONDATAA data = {};
+    
+    data.cbSize = sizeof(data);
+    data.hWnd = g_hwnd;
+    data.uID = 1;
+    
+    Shell_NotifyIconA(NIM_DELETE, &data);
     
     if (g_tray_popup) {
         DestroyMenu(g_tray_popup);

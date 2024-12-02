@@ -74,14 +74,14 @@ typedef double f64;
 
 template <typename F>
 struct Defer_Holder_ {
-	F f;
-	Defer_Holder_(F f) : f(f) {}
-	~Defer_Holder_() { f(); }
+    F f;
+    Defer_Holder_(F f) : f(f) {}
+    ~Defer_Holder_() { f(); }
 };
 
 template <typename F>
 Defer_Holder_<F> create_defer_(F f) {
-	return Defer_Holder_<F>(f);
+    return Defer_Holder_<F>(f);
 }
 
 #define DEFER_CAT1_(x, y) x##y
@@ -140,9 +140,9 @@ static INLINE void strncpy0(char *dst, const char *src, int n) {
 
 static int format_time(i64 ts, char *buffer, int buffer_size) {
     i64 hours = ts / 3600;
-	i64 minutes = (ts / 60) - (hours * 60);
-	i64 seconds = ts - (hours * 3600) - (minutes * 60);
-	return snprintf(buffer, buffer_size, "%02lld:%02lld:%02lld", hours, minutes, seconds);
+    i64 minutes = (ts / 60) - (hours * 60);
+    i64 seconds = ts - (hours * 3600) - (minutes * 60);
+    return snprintf(buffer, buffer_size, "%02lld:%02lld:%02lld", hours, minutes, seconds);
 }
 
 // platform.cpp

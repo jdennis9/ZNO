@@ -31,32 +31,32 @@ void retrieve_file_path(Path_Index index, char *buffer, u32 buffer_size);
 void retrieve_file_path(Path_Index index, wchar_t *buffer, u32 buffer_size);
 
 static inline const char *get_file_extension(const char *path) {
-	i64 length = strlen(path);
-	for (i64 i = length - 1; i >= 0; i--) {
-		if (path[i] == '.') {
-			return &path[i + 1];
-		}
-	}
-	
-	return path;
+    i64 length = strlen(path);
+    for (i64 i = length - 1; i >= 0; i--) {
+        if (path[i] == '.') {
+            return &path[i + 1];
+        }
+    }
+    
+    return path;
 }
 
 static const char *get_file_name(const char *path) {
-	i64 length = strlen(path);
+    i64 length = strlen(path);
     
-	for (i64 i = length - 1; i >= 0; --i) {
-		if (path[i] == '\\') return &path[i + 1];
-	}
+    for (i64 i = length - 1; i >= 0; --i) {
+        if (path[i] == '\\') return &path[i + 1];
+    }
     
-	return path;
+    return path;
 }
 
 static u32 get_file_name_length_without_extension(const char *path) {
-	const char *filename = get_file_name(path);
-	const char *extension = get_file_extension(path);
-	
-	if (extension == path || extension < filename) return (u32)strlen(filename);
-	else return (u32)(extension - filename - 1);
+    const char *filename = get_file_name(path);
+    const char *extension = get_file_extension(path);
+    
+    if (extension == path || extension < filename) return (u32)strlen(filename);
+    else return (u32)(extension - filename - 1);
 }
 
 #endif //FILENAMES_H
