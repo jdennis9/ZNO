@@ -41,6 +41,7 @@ enum {
     WINDOW__FIRST_VISUALIZER,
     WINDOW_V_SPECTRUM = WINDOW__FIRST_VISUALIZER,
     WINDOW_V_PEAK,
+    WINDOW_V_WAVE_BAR,
     WINDOW__COUNT,
 };
 
@@ -122,8 +123,8 @@ bool load_playlist_from_file(const wchar_t *path, Playlist& playlist);
 //-
 // From ui_custom.cpp. These all use imgui_internal.h
 bool circle_handle_slider(const char *str_id, float *value, float min, float max, ImVec2 size);
-// @TODO: Separate into left/right channels
 void peak_meter_widget(const char *str_id, ImVec2 size);
+void waveform_preview_widget(const char *str_id, f32 *buffer, u32 calculated_samples, u32 total_samples, f32 *p_position, ImVec2 size = ImVec2(0, 0));
 // Calls ImGui::Begin() so make sure to call ImGui::End() no matter the return value is!
 bool begin_status_bar();
 void end_status_bar();

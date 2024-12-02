@@ -18,9 +18,12 @@
 #include <imgui.h>
 #include <math.h>
 #include <kissfft/kiss_fftr.h>
+#include <atomic>
 #include "playback_analysis.h"
 #include "playback.h"
+#include "platform.h"
 #include "ui.h"
+#include "decoder.h"
 
 #define SG_BAND_COUNT 20
 #define PEAK_ROUGHNESS 0.015f
@@ -55,11 +58,22 @@ struct Spectrum {
     f32 peaks[SG_BAND_COUNT];
 };
 
+struct Waveform_Preview {
+    Decoder decoder;
+    Array<f32> output;
+    std::atomic_uint32_t output_count;
+    std::atomic_bool want_cancel;
+    Thread thread;
+    Track track;
+};
+
 struct Playback_Metrics {
     Spectrum spectrum;
     f32 peak[MAX_AUDIO_CHANNELS];
+    Waveform_Preview waveform_preview;
     bool need_update_peak;
     bool need_update_spectrum;
+    bool need_update_waveform_preview;
 };
 
 static Playback_Buffer g_buffer;
@@ -170,6 +184,50 @@ static void calc_spectrum(Playback_Buffer_View *view, Spectrum *sg) {
     }
 }
 
+static int fill_waveform_preview(void *dont_care) {
+    Waveform_Preview *wp = &g_metrics.waveform_preview;
+    Decoder *dec = &wp->decoder;
+    int samplerate = dec->info.samplerate;
+    int channels = dec->info.channels;
+    int segment_size = dec->info.frames / 1024;
+    Array<f32> buffer = {};
+    buffer.push(segment_size * channels);
+
+    wp->output.push(dec->info.frames / segment_size);
+
+    const f32 *input = buffer.data;
+
+    while (decoder_decode(dec, buffer.data, segment_size, channels, samplerate) == DECODE_STATUS_COMPLETE) {
+        f32 sum = 0.f;
+        i32 peak_count = 0;
+
+        f32 peak = 0.f;
+
+        for (int i = 0; i < segment_size; ++i) {
+            peak = MAX(fabsf(input[i]), peak);
+        }
+
+        wp->output[wp->output_count] = clamp(peak, 0.f, 1.f);
+        wp->output_count++;
+
+        if (wp->want_cancel) return 0;
+    }
+
+    return 0;
+}
+
+bool get_waveform_preview(f32 **buffer, u32 *sample_count, u32 *length) {
+    Waveform_Preview *wp = &g_metrics.waveform_preview;
+    g_metrics.need_update_waveform_preview = true;
+    if (wp->output_count != 0) {
+        *buffer = wp->output.data;
+        *length = wp->output.count;
+        *sample_count = wp->output_count;
+        return true;
+    }
+    return false;
+}
+
 void show_spectrum_widget(const char *str_id, float width) {
     const Spectrum &sg = g_metrics.spectrum;
     g_metrics.need_update_spectrum = true;
@@ -177,6 +235,7 @@ void show_spectrum_widget(const char *str_id, float width) {
     ImGui::PlotHistogram(str_id, sg.peaks, SG_BAND_COUNT, 0, NULL, 0.f, 1.f, ImVec2(width, 0));
     ImGui::PopStyleColor();
 }
+
 void show_spectrum_ui() {
     g_metrics.need_update_spectrum = true;
     ImDrawList *drawlist = ImGui::GetWindowDrawList();
@@ -276,6 +335,31 @@ void update_playback_analyzers(f32 delta_ms) {
             peaks[i] = lerp(peaks[i], frame_sg.peaks[i], delta_ms*SPECTRUM_ROUGHNESS);
         }
         g_metrics.need_update_spectrum = false;
+    }
+
+    if (g_metrics.need_update_waveform_preview) {
+        Waveform_Preview *wp = &g_metrics.waveform_preview;
+        Track track = ui_get_playing_track();
+        g_metrics.need_update_waveform_preview = false;
+        if (track && (track != wp->track)) {
+            wchar_t path[PATH_LENGTH];
+            wp->track = track;
+            library_get_track_path(track, path);
+
+            if (wp->thread) {
+                wp->want_cancel = true;
+                thread_join(wp->thread);
+                wp->want_cancel = false;
+                thread_destroy(wp->thread);
+                decoder_close(&wp->decoder);
+            }
+
+            if (decoder_open(&wp->decoder, path)) {
+                wp->output.clear();
+                wp->output_count = 0;
+                wp->thread = thread_create(NULL, &fill_waveform_preview);
+            }
+        }
     }
 }
 

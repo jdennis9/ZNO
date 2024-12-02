@@ -208,6 +208,47 @@ void peak_meter_widget(const char *str_id, ImVec2 size) {
     ImGui::InvisibleButton(str_id, size);
 }
 
+void waveform_preview_widget(const char *str_id, f32 *buffer, u32 calculated_samples, u32 total_samples, f32 *p_position, ImVec2 size) {
+	ImDrawList *draw_list = ImGui::GetWindowDrawList();
+	ImVec2 available_size = ImGui::GetContentRegionAvail();
+	ImVec2 cursor = ImGui::GetCursorScreenPos();
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	if (size.x == 0.f) size.x = available_size.x;
+	if (size.y == 0.f) size.y = available_size.y;
+
+	f32 bar_width = size.x / (f32)total_samples;
+	f32 bar_height = size.y * 0.5f;
+	f32 middle = cursor.y + (size.y * 0.5f);
+	f32 x_pos = cursor.x;
+	u32 sample_at_position = (f32)total_samples * *p_position;
+	 
+	for (u32 i = 0; i < calculated_samples; ++i) {
+		f32 peak_height = buffer[i] * bar_height;
+		bool up_to_this_sample = i <= sample_at_position;
+
+		ImVec2 min = {
+			x_pos,
+			middle - peak_height,
+		};
+
+		ImVec2 max = {
+			x_pos + bar_width,
+			middle + peak_height,
+		};
+
+		if (fabsf(min.y - max.y) < 1.f) {
+			min.y -= 1.f;
+			max.y = min.y + 2.f;
+		}
+
+		ImVec4 color = style.Colors[ImGuiCol_PlotLines];
+		if (!up_to_this_sample) color.w *= 0.2f;
+		draw_list->AddRectFilled(min, max, ImGui::GetColorU32(color));
+		x_pos += bar_width;
+	}
+}
+
 bool begin_status_bar() {
     ImGuiWindowFlags window_flags =
         ImGuiWindowFlags_NoScrollbar|

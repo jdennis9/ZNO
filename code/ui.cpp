@@ -131,6 +131,7 @@ static UI_State ui;
 static void show_prefs_editor();
 static void show_hotkey_editor();
 static void show_file_info();
+static void show_wave_bar();
 static void update_detailed_metadata();
 static void save_all_state();
 static void show_about();
@@ -196,6 +197,7 @@ const char *get_window_name(int window) {
         case WINDOW_FILE_INFO: return "File";
         case WINDOW_V_SPECTRUM: return "Spectrum";
         case WINDOW_V_PEAK: return "Peak Meter";
+        case WINDOW_V_WAVE_BAR: return "Wave Bar";
     }
     
     return NULL;
@@ -218,6 +220,7 @@ const char *get_window_internal_name(int window) {
         case WINDOW_FILE_INFO: return "FileInfo";
         case WINDOW_V_SPECTRUM: return "Spectrum";
         case WINDOW_V_PEAK: return "ChannelPeaks";
+        case WINDOW_V_WAVE_BAR: return "WaveBar";
     }
     
     return NULL;
@@ -1323,6 +1326,7 @@ void init_ui() {
     ui.window_show_fn[WINDOW_FILE_INFO] = &show_file_info;
     ui.window_show_fn[WINDOW_V_SPECTRUM] = &show_spectrum_ui;
     ui.window_show_fn[WINDOW_V_PEAK] = &show_channel_peaks_ui;
+    ui.window_show_fn[WINDOW_V_WAVE_BAR] = &show_wave_bar;
     
     ui.window_flags[WINDOW_METADATA] = ImGuiWindowFlags_AlwaysVerticalScrollbar;
     
@@ -1647,6 +1651,16 @@ static void show_file_info() {
         ImGui::TextDisabled("No track playing");
     }
 
+}
+
+static void show_wave_bar() {
+    f32 *buffer;
+    u32 calculated;
+    u32 total;
+    if (get_waveform_preview(&buffer, &calculated, &total)) {
+        f32 position = (float)playback_get_position_millis()/(float)playback_get_duration_millis();
+        waveform_preview_widget("##waveform", buffer, calculated, total, &position);
+    }
 }
 
 static u32 get_highest_selection_index_before(const Playlist& playlist, const Track& track) {
