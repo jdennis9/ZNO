@@ -1056,8 +1056,12 @@ void show_ui() {
                 ui.shuffle_on = !ui.shuffle_on;
             if (ImGui::MenuItem(PREV_TRACK_ICON))
                 ui_play_previous_track();
-            if (ImGui::MenuItem(paused ? PLAY_ICON : PAUSE_ICON))
-                playback_toggle();
+            if (ImGui::MenuItem(paused ? PLAY_ICON : PAUSE_ICON)) {
+                if (paused && ui.current_track == 0 && ui.queue.tracks.count > 0) {
+                    go_to_queue_position(0);
+                }
+                else playback_toggle();
+            }
             if (ImGui::MenuItem(NEXT_TRACK_ICON))
                 ui_play_next_track();
         }
@@ -1299,6 +1303,8 @@ void init_ui() {
     START_TIMER(load_library, "Load library");
     load_playlist_from_file(LIBRARY_PATH, ui.library);
     STOP_TIMER(load_library);
+
+    load_playlist_from_file(QUEUE_PATH, ui.queue);
     
     if (ui.library.tracks.count) for (const Track& track : ui.library.tracks) {
         add_to_albums(track);
@@ -1371,6 +1377,7 @@ void init_ui() {
 static void save_all_state() {
     save_state();
     save_playlist_to_file(ui.library, LIBRARY_PATH);
+    save_playlist_to_file(ui.queue, QUEUE_PATH);
 }
 
 // Show menu items to add files or folders to a playlist
