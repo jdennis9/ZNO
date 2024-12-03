@@ -84,6 +84,12 @@ static int theme_ini_handler(void *data, const char *section, const char *key, c
             }
         }
     }
+    else if (!strcmp(section, "Other")) {
+        if (!strcmp(key, "EnableFrameBorders")) {
+            int on = atoi(value);
+            style.FrameBorderSize = on ? 1.f : 0.f;
+        }
+    }
     
     return true;
 }
@@ -187,6 +193,9 @@ void save_theme(const char *name) {
         fprintf(file, "%s = %x\n", ImGui::GetStyleColorName(i), color);
     }
     
+    fprintf(file, "[Other]\n");
+    fprintf(file, "EnableFrameBorders = %d\n", (int)(style.FrameBorderSize > 0.f));
+
     fclose(file);
 }
 
@@ -242,6 +251,11 @@ bool show_theme_editor_gui() {
         load_theme(theme_name);
     }
     
+    bool frame_borders_enabled = style.FrameBorderSize > 0.f;
+    if (ImGui::Checkbox("Enable frame borders", &frame_borders_enabled)) {
+        style.FrameBorderSize = frame_borders_enabled ? 1.f : 0.f;
+    }
+
     ImGui::SeparatorText("ZNO Colors");
     for (u32 i = 0; i < ARRAY_LENGTH(g_color_info); ++i) {
         int index = g_color_info[i].color;
