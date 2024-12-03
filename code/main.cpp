@@ -420,6 +420,10 @@ f32 get_dpi_scale() {
     return g_window.dpi_scale;
 }
 
+void resize_main_window(int width, int height) {
+    SetWindowPos(g_hwnd, 0, 0, 0, width, height, 0);
+}
+
 static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;

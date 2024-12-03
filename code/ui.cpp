@@ -128,6 +128,7 @@ struct UI_State {
     } track_scan_buffer;
 
 #ifndef NDEBUG
+    bool disable_debug_menu;
     struct {
         bool show_imgui_style_editor;
     } debug;
@@ -912,6 +913,12 @@ void show_ui() {
         return;
     }
 
+#ifndef NDEBUG
+    if (ImGui::IsKeyPressed(ImGuiKey_F5)) {
+        ui.disable_debug_menu = !ui.disable_debug_menu;
+    }
+#endif
+
     //-
     // Main menu
     if (ImGui::BeginMainMenuBar()) {
@@ -1027,8 +1034,25 @@ void show_ui() {
         }
 
 #ifndef NDEBUG
-        if (ImGui::BeginMenu("Debug")) {
+        if (!ui.disable_debug_menu && ImGui::BeginMenu("Debug (F5)")) {
             ImGui::MenuItem("Style editor", NULL, &ui.debug.show_imgui_style_editor);
+            
+            struct {int w, h;} size_presets[] = {
+                {1920, 1080},
+                {1280, 720},
+                {720, 1280},
+                {1280, 1280},
+            };
+
+            for (const auto& p : size_presets) {
+                char name[128] = {};
+                snprintf(name, sizeof(name)-1, "Set window to %dx%d", p.w, p.h);
+
+                if (ImGui::MenuItem(name)) {
+                    resize_main_window(p.w, p.h);
+                }
+            }
+
             ImGui::EndMenu();
         }
 #endif
