@@ -19,6 +19,7 @@
 #include "platform.h"
 #include "main.h"
 #include "filenames.h"
+#include "preferences.h"
 #include <imgui.h>
 #include <ini.h>
 #include <assert.h>
@@ -157,7 +158,10 @@ void load_theme(const char *name) {
 
 void save_theme(const char *name) {
     char path[256];
-    
+    Preferences& prefs = get_preferences();
+    strncpy0(prefs.theme, name, sizeof(prefs.theme));
+    strncpy0(g_loaded_theme_name, name, sizeof(g_loaded_theme_name));
+
     if (!does_file_exist(L"Themes")) {
         create_directory(L"Themes");
     }
@@ -201,6 +205,7 @@ void save_theme(const char *name) {
 
 bool show_theme_editor_gui() {
     ImGuiStyle& style = ImGui::GetStyle();
+    Preferences& prefs = get_preferences();
     static char theme_name[MAX_THEME_NAME_LENGTH];
     //static const char *editing_theme;
     static bool new_theme = false;
@@ -223,6 +228,8 @@ bool show_theme_editor_gui() {
             strcpy(theme_name, sel);
             new_theme = false;
             dirty = false;
+            strncpy0(prefs.theme, theme_name, sizeof(prefs.theme));
+            set_preferences_dirty();
         }
         
         ImGui::EndCombo();
