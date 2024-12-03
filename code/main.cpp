@@ -309,7 +309,8 @@ int main(int argc, char *argv[])
         
             render_background();
             ImGui::Render();
-            video_end_frame();
+
+            g_window.is_obscured = !video_end_frame();
         }
     }
     
