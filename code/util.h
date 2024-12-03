@@ -3,10 +3,17 @@
 
 #include "defines.h"
 
-// We use our on tolower because Microsoft's one is extremely slow
+// We use our on tolower/toupper because Microsoft's one is extremely slow
 static inline int to_lower(int c) {
     if (c >= 'A' && c <= 'Z') {
         return c + ('a' - 'A');
+    }
+    return c;
+}
+
+static inline int to_upper(int c) {
+    if (c >= 'a' && c <= 'z') {
+        return c - ('a' - 'A');
     }
     return c;
 }

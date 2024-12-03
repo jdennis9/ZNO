@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "playlist.h"
+#include "util.h"
 #include <string.h>
 #include <xxhash.h>
 #include <stdlib.h>
@@ -27,8 +28,8 @@ static inline int strcasecmp(const char *a, const char *b) {
     do {
         ca = *(u8*)a;
         cb = *(u8*)b;
-        ca = tolower(toupper(ca));
-        cb = tolower(toupper(cb));
+        ca = to_lower(to_upper(ca));
+        cb = to_lower(to_upper(cb));
         a++;
         b++;
     } while ((ca == cb) && ca && cb);
