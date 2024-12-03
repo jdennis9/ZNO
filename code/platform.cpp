@@ -156,7 +156,7 @@ static COMDLG_FILTERSPEC IMAGE_FILE_TYPES[] = {
 };
 
 static COMDLG_FILTERSPEC FONT_FILE_TYPES[] = {
-    {L"Font file", L"*.ttf;*.otf"},
+    {L"Font file", L"*.ttf;*.otf;*.ttc"},
 };
 
 static void set_filter_spec(IFileDialog *d, File_Type type) {
