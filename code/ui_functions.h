@@ -72,6 +72,7 @@ void begin_add_tracks_async_scan(Playlist *target);
 
 //-
 // From ui_functions.cpp
+bool is_imgui_item_double_clicked();
 bool show_playlist_selectable(const Playlist& playlist, bool playing, ImGuiSelectableFlags flags);
 
 typedef u32 Playlist_List_Flags;

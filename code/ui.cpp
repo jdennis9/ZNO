@@ -193,7 +193,7 @@ const char *get_window_name(int window) {
         case WINDOW_ALBUM_LIST: return "Album List";
         case WINDOW_SEARCH_RESULTS: return "Search Results";
         case WINDOW_METADATA: return "Metadata";
-        case WINDOW_USER_PLAYLISTS: return "Your Playlists";
+        case WINDOW_USER_PLAYLISTS: return "Playlists";
         case WINDOW_PLAYLIST_TRACKS: return "Playlist";
         case WINDOW_THEME_EDITOR: return "Theme";
         case WINDOW_METADATA_EDITOR: return "Edit Metadata";
@@ -599,6 +599,7 @@ static void show_user_playlists() {
     static char new_playlist_name[PLAYLIST_NAME_MAX];
     static char rename_playlist_name[PLAYLIST_NAME_MAX];
     static int rename_playlist_index;
+
     if (ImGui::Button("+ New playlist") || ui.want_to_create_playlist_from_selection) {
         ImGui::OpenPopup("New playlist");
         memset(new_playlist_name, 0, sizeof(new_playlist_name));
@@ -654,7 +655,28 @@ static void show_user_playlists() {
         ImGui::EndPopup();
     }
     //-
-    
+
+    //-
+    // Library shortcut
+    {
+        Array<Playlist> array = {};
+        array.data = &ui.library;
+        array.count = 1;
+
+        Playlist_List_Action action = {};
+        show_playlist_list("##shortcuts", array, ui.current_playlist_id, &action,
+            PLAYLIST_LIST_FLAGS_NO_EDIT, ui.selected_user_playlist_id);
+
+        if (action.user_requested_playlist) play_playlist(ui.library);
+        if (action.user_selected_playlist || action.user_requested_playlist) {
+            bring_window_to_front(WINDOW_LIBRARY);
+            ui.selected_user_playlist_id = ui.library_id;
+        }
+
+        ImGui::Separator();
+    }
+    //-
+
     //-
     // Show playlist table and handle interactions with it
     Playlist_List_Action action = {};

@@ -23,14 +23,14 @@ bool show_playlist_selectable(const Playlist& playlist, bool playing, ImGuiSelec
     return ImGui::Selectable(playlist.name, playing, flags);
 }
 
-bool is_item_double_clicked() {
+bool is_imgui_item_double_clicked() {
     return ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
 }
 
 void show_playlist_list(const char *str_id, Array<Playlist>& playlists, 
                         u32 playing_playlist_id, Playlist_List_Action *action, Playlist_List_Flags flags,
                         u32 selected_playlist_id) {
-    ImGuiTableFlags table_flags = ImGuiTableFlags_BordersInner;
+    ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
     *action = Playlist_List_Action{};
     
     bool show_creator = (flags & PLAYLIST_LIST_FLAGS_SHOW_CREATOR) != 0;
@@ -43,13 +43,13 @@ void show_playlist_list(const char *str_id, Array<Playlist>& playlists,
         //-
         // Setup columns
         if (show_creator) {
+            ImGui::TableSetupColumn("No. Tracks", 0, 20.f);
             ImGui::TableSetupColumn("By", 0, 150.f);
             ImGui::TableSetupColumn("Title", 0, 150.f);
-            ImGui::TableSetupColumn("No. Tracks", 0, 20.f);
         }
         else {
+            ImGui::TableSetupColumn("No. Tracks", ImGuiTableColumnFlags_WidthStretch, 0.15f);
             ImGui::TableSetupColumn("Title");
-            ImGui::TableSetupColumn("No. Tracks", ImGuiTableColumnFlags_WidthStretch, 0.2f);
         }
         
         if (show_creator) {
@@ -63,19 +63,21 @@ void show_playlist_list(const char *str_id, Array<Playlist>& playlists,
             u32 playlist_id = playlist.get_id();
             bool is_playing = playlist_id == playing_playlist_id;
             bool is_selected = playlist_id == selected_playlist_id;
-            int col = 0;
             
             ImGui::TableNextRow();
             
             if (is_playing) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0,
-                                                   ImGui::GetColorU32(ImGuiCol_PlotLines));
+                                                   get_theme_color(THEME_COLOR_PLAYING_INDICATOR));
             
+            ImGui::TableNextColumn();
+            ImGui::TextDisabled("%u", playlist.tracks.count);
+
             if (show_creator) {
-                ImGui::TableSetColumnIndex(col++);
+                ImGui::TableNextColumn();
                 ImGui::TextUnformatted(playlist.creator);
             }
             
-            ImGui::TableSetColumnIndex(col++);
+            ImGui::TableNextColumn();
             if (show_playlist_selectable(playlist, is_selected, ImGuiSelectableFlags_SpanAllColumns)) {
                 action->user_selected_playlist = true;
                 action->selected_playlist_index = i;
@@ -91,7 +93,7 @@ void show_playlist_list(const char *str_id, Array<Playlist>& playlists,
             }
             //-
             
-            if (ImGui::IsItemClicked(ImGuiMouseButton_Middle) || is_item_double_clicked()) {
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Middle) || is_imgui_item_double_clicked()) {
                 action->user_requested_playlist = true;
                 action->requested_playlist_index = i;
             }
@@ -112,9 +114,6 @@ void show_playlist_list(const char *str_id, Array<Playlist>& playlists,
                 }
                 ImGui::EndPopup();
             }
-            
-            ImGui::TableSetColumnIndex(col++);
-            ImGui::TextDisabled("%u", playlist.tracks.count);
         }
         
         ImGui::EndTable();
@@ -202,7 +201,7 @@ static void show_track_range(Playlist& playlist, u32 start,
         }
         
         // Play track
-        if (ImGui::IsItemClicked(ImGuiMouseButton_Middle) || is_item_double_clicked()) {
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Middle) || is_imgui_item_double_clicked()) {
             action->user_requested_track = true;
             action->requested_track_index = i_track;
             if (!is_selected) {
