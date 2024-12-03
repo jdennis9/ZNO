@@ -656,7 +656,31 @@ static void load_font(const char *path, int size, int icon_size, float scale) {
     io.Fonts->Clear();
     
     if (path) {
-        io.Fonts->AddFontFromFileTTF(path, scaled_font_size, &cfg);
+        ImFontGlyphRangesBuilder builder = {};
+        static ImVector<ImWchar> builder_output;
+        builder_output.clear();
+        const static ImWchar ranges[] = {
+            0x2010, 0x2015, // Dashes/hyphens
+            0x2018, 0x201f, // Quotation marks
+            0x2070, 0x207f, // Superscripts
+            0x2080, 0x208e, // Subscripts
+            0x2160, 0x217f, // Roman numerals
+            0x2145, 0x2149, // Some Italic characters
+            0x2100, 0x2134, // Letter-like symbols
+            0,
+        };
+
+        builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
+        builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());
+        builder.AddRanges(io.Fonts->GetGlyphRangesJapanese());
+        builder.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+        builder.AddRanges(io.Fonts->GetGlyphRangesKorean());
+        builder.AddRanges(io.Fonts->GetGlyphRangesThai());
+        builder.AddRanges(io.Fonts->GetGlyphRangesVietnamese());
+        builder.AddRanges(io.Fonts->GetGlyphRangesGreek());
+        builder.AddRanges(ranges);
+        builder.BuildRanges(&builder_output);
+        io.Fonts->AddFontFromFileTTF(path, scaled_font_size, &cfg, builder_output.Data);
     } else load_default = true;
     
     if (load_default) {
