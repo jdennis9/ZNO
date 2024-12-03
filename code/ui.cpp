@@ -126,6 +126,12 @@ struct UI_State {
         Array<wchar_t> path_pool;
         Array<u32> paths;
     } track_scan_buffer;
+
+#ifndef NDEBUG
+    struct {
+        bool show_imgui_style_editor;
+    } debug;
+#endif
 };
 
 static UI_State ui;
@@ -1019,6 +1025,13 @@ void show_ui() {
             }
             ImGui::EndMenu();
         }
+
+#ifndef NDEBUG
+        if (ImGui::BeginMenu("Debug")) {
+            ImGui::MenuItem("Style editor", NULL, &ui.debug.show_imgui_style_editor);
+            ImGui::EndMenu();
+        }
+#endif
         
         // Volume controls
         ImGui::Separator();
@@ -1132,6 +1145,15 @@ void show_ui() {
         ImGui::EndMainMenuBar();
         
     }
+    //-
+
+    //-
+    // Debug windows
+#ifndef NDEBUG
+    if (ui.debug.show_imgui_style_editor) {
+        ImGui::ShowStyleEditor();
+    }
+#endif
     //-
 
     //-
