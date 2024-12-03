@@ -1719,8 +1719,8 @@ static void show_folders_view() {
     if (playlist.tracks.count == 0) {
         ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg|ImGuiTableFlags_SizingStretchProp;
         if (!ImGui::BeginTable("##folder_table", 2, table_flags)) return;
-        ImGui::TableSetupColumn("name", 0, 0.9f);
         ImGui::TableSetupColumn("length", 0, 0.1f);
+        ImGui::TableSetupColumn("name", 0, 0.9f);
 
         for (u32 folder_index = 0; folder_index < pool.folders.count; ++folder_index) {
             const Folder_Entry& folder = pool.folders[folder_index];
@@ -1742,6 +1742,9 @@ static void show_folders_view() {
             folder_name = get_file_name(folder_name_buffer);
 
             ImGui::TableSetColumnIndex(0);
+            ImGui::TextDisabled("%u", folder.file_count);
+
+            ImGui::TableSetColumnIndex(1);
             if (ImGui::Selectable(folder_name)) {
                 playlist.tracks.clear();
 
@@ -1752,9 +1755,6 @@ static void show_folders_view() {
                     if (track) playlist.tracks.append(track);
                 }
             }
-
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%u", folder.file_count);
         }
 
         ImGui::EndTable();
