@@ -1470,11 +1470,13 @@ void show_track_context_menu(Playlist& from_playlist, u32 track_index) {
         if (ImGui::MenuItem("Add to queue")) {
             if (ui.shuffle_on) shuffle_tracks(ui.track_selection);
             ui.track_selection.copy_unique_to(ui.queue.tracks);
+            ui.current_playlist_id = ui.queue_id;
         }
         if (ImGui::MenuItem("Play")) {
             ui.queue.clear();
             if (ui.shuffle_on) shuffle_tracks(ui.track_selection);
             ui.track_selection.copy_unique_to(ui.queue.tracks);
+            ui.current_playlist_id = ui.queue_id;
             go_to_queue_position(0);
         }
     }
