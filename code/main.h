@@ -24,6 +24,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define APP_VERSION_STRING "0.5.2"
+
 // Functions for communicating with main
 
 enum {

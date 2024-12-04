@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "ui_functions.h"
+#include "main.h"
 #include <sndfile.h>
 #include <imgui.h>
 
