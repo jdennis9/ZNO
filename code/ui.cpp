@@ -666,12 +666,8 @@ static void show_user_playlists() {
     //-
     // Library shortcut
     {
-        Array<Playlist> array = {};
-        array.data = &ui.library;
-        array.count = 1;
-
         Playlist_List_Action action = {};
-        show_playlist_list("##shortcuts", array, ui.current_playlist_id, &action,
+        show_playlist_list("##shortcuts", Array_View<Playlist>(&ui.library, 1), ui.current_playlist_id, &action,
             PLAYLIST_LIST_FLAGS_NO_EDIT, ui.selected_user_playlist_id);
 
         if (action.user_requested_playlist) play_playlist(ui.library);

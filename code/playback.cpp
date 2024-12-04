@@ -189,6 +189,10 @@ void playback_unload_file() {
     interrupt_audio_stream(&g_stream);
     decoder_close(&g_decoder);
     unlock_mutex(g_lock);
+    for (u32 i = 0; i < MAX_AUDIO_CHANNELS; ++i) {
+        g_capture.next[i].free();
+        g_capture.prev[i].free();
+    }
 }
 
 bool playback_load_file(const wchar_t *path) {

@@ -27,7 +27,7 @@ bool is_imgui_item_double_clicked() {
     return ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
 }
 
-void show_playlist_list(const char *str_id, Array<Playlist>& playlists, 
+void show_playlist_list(const char *str_id, Array_View<Playlist> playlists, 
                         u32 playing_playlist_id, Playlist_List_Action *action, Playlist_List_Flags flags,
                         u32 selected_playlist_id) {
     ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;

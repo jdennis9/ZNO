@@ -96,7 +96,7 @@ struct Playlist_List_Action {
     bool user_requested_delete_playlist;
     bool user_requested_rename_playlist;
 };
-void show_playlist_list(const char *str_id, Array<Playlist>& playlists, 
+void show_playlist_list(const char *str_id, Array_View<Playlist> playlists,
                         u32 playing_playlist_id, Playlist_List_Action *action,
                         Playlist_List_Flags flags = 0, u32 selected_playlist_id = 0);
 

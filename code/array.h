@@ -23,16 +23,42 @@
 #include <iterator>
 
 template<typename T>
+struct Array;
+
+template<typename T>
+struct Array_View {
+    T *data;
+    u32 count;
+
+    INLINE T *begin() {return data;}
+    INLINE T const* begin() const {return data;}
+    INLINE T *end() {return data + count;}
+    INLINE T const* end() const {return data + count;};
+
+    INLINE T& operator[](i64 index) {
+        ASSERT(index >= 0 && index < (i64)count);
+        return data[index];
+    }
+    INLINE T const& operator[](i64 index) const {
+        ASSERT(index >= 0 && index < (i64)count);
+        return data[index];
+    }
+
+    Array_View(T *p, u32 length) : data(p), count(length) {}
+    Array_View(Array<T>& arr);
+};
+
+template<typename T>
 struct Array {
     static constexpr u32 CHUNK_BYTES = 4096;
     T *data;
     u32 count;
     u32 capacity;
     
-    INLINE T *begin() {return count ? data : NULL;}
-    INLINE T const* begin() const {return count ? data : NULL;}
-    INLINE T *end() {return count ? data + count : NULL;}
-    INLINE T const* end() const {return count ? data + count : NULL;};
+    INLINE T *begin() {return data;}
+    INLINE T const* begin() const {return data;}
+    INLINE T *end() {return data + count;}
+    INLINE T const* end() const {return data + count;};
     
     INLINE T& operator[](i64 index) {
         ASSERT(index >= 0 && index < (i64)count);
@@ -146,12 +172,24 @@ struct Array {
     }
     
     INLINE void free() {
-        ::free(data);
+        if (data) {
+            ::free(data);
+        }
         data = NULL;
         capacity = 0;
         count = 0;
     }
+
+    //operator Array_View<T>() {return Array_View(data, count);}
+
+    ~Array() {this->free();}
 };
+
+template<typename T>
+Array_View<T>::Array_View(Array<T>& arr) {
+    data = arr.data;
+    count = arr.count;
+}
 
 #endif //ARRAY_H
 
