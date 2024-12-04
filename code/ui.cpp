@@ -1361,12 +1361,14 @@ void init_ui() {
     {
         auto load_playlist_iterator = 
         [](void *dont_care, const wchar_t *path, bool is_folder) -> Recurse_Command {
-            Playlist playlist = {};
+            u32 index = ui.user_playlists.push();
+            Playlist& playlist = ui.user_playlists[index];
+            playlist = Playlist{};
             wlog_debug(L"Load playlist: %s\n", path);
             if (load_playlist_from_file(path, playlist)) {
-                ui.user_playlists.append(playlist);
                 ui.user_playlist_paths.append(store_file_path(ui.path_pool, path));
             }
+            else ui.user_playlists.pop();
             
             return RECURSE_CONTINUE;
         };
@@ -1908,12 +1910,8 @@ bool accept_drag_drop_to_playlist(Playlist& playlist) {
     const ImGuiPayload *payload = ImGui::AcceptDragDropPayload(DRAG_DROP_PAYLOAD_TYPE_TRACKS);
     
     if (payload) {
-        Array<Track> tracks = {};
         ASSERT(payload->DataSize % sizeof(Track) == 0);
-        
-        tracks.data = (Track*)payload->Data;
-        tracks.count = payload->DataSize / sizeof(Track);
-        
+        Array_View<Track> tracks = Array_View<Track>((Track*)payload->Data, payload->DataSize / sizeof(Track));
         playlist.add_tracks(tracks);
         playlist.sort();
         return true;

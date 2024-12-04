@@ -137,9 +137,9 @@ struct Playlist {
         return false;
     }
     
-    inline void add_tracks(const Array<Track>& t) {
-        for (u32 i = 0; i < t.count; ++i) {
-            this->add_track(t[i]);
+    inline void add_tracks(const Array_View<Track>& t) {
+        for (Track track : t) {
+            this->add_track(track);
         }
     }
     
