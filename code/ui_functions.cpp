@@ -346,7 +346,7 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
         // Sort the playlist if the user clicks on one of the headers
         ImGuiTableSortSpecs *sort_specs = ImGui::TableGetSortSpecs();
         if (sort_specs) 
-            action->user_altered_playlist = update_playlist_sort_specs(playlist, sort_specs);
+            action->user_altered_playlist |= update_playlist_sort_specs(playlist, sort_specs);
         
         ImGui::EndTable();
     }

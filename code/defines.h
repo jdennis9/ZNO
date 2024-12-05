@@ -137,6 +137,11 @@ static INLINE void strncpy0(char *dst, const char *src, int n) {
     dst[n-1] = 0;
 }
 
+static INLINE void strncpy0(wchar_t *dst, const wchar_t *src, int n) {
+    wcsncpy(dst, src, n-1);
+    dst[n-1] = 0;
+}
+
 static int format_time(i64 ts, char *buffer, int buffer_size) {
     i64 hours = ts / 3600;
     i64 minutes = (ts / 60) - (hours * 60);

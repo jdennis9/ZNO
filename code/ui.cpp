@@ -115,6 +115,11 @@ struct UI_State {
 
     Track metadata_editor_track;
 
+    struct {
+        wchar_t path[PATH_LENGTH];
+        Playlist *playlist;
+    } deferred_playlist_save;
+
     Thread track_scan_thread;
     struct {
         std::atomic<u32> total_track_count;
@@ -145,6 +150,8 @@ static void show_folders_view();
 static void update_detailed_metadata();
 static void save_all_state();
 static void show_about();
+// Defer saving a playlist until after the async metadata retrieval is done
+static void defer_save_playlist(Playlist *playlist, const wchar_t *path);
 
 static void add_to_albums(const Track& track) {
     Metadata track_md;
@@ -828,6 +835,9 @@ static void show_selected_playlist() {
     
     if (begin_window_drag_drop_target("##playlist_drag_drop")) {
         altered |= accept_drag_drop_to_playlist(*playlist);
+        wchar_t path[PATH_LENGTH];
+        retrieve_file_path(ui.path_pool, save_path, path, PATH_LENGTH);
+        defer_save_playlist(playlist, path);
         ImGui::EndDragDropTarget();
     }
     
@@ -904,6 +914,11 @@ void show_ui() {
             ui.track_scan_buffer.paths.free();
             ui.track_scan_buffer.path_pool.free();
             ui.track_scan_progress.done = false;
+
+            if (ui.deferred_playlist_save.playlist) {
+                save_playlist_to_file(*ui.deferred_playlist_save.playlist, ui.deferred_playlist_save.path);
+                ui.deferred_playlist_save.playlist = NULL;
+            }
         }
 
         return;
@@ -972,7 +987,7 @@ void show_ui() {
                 if (show_add_files_menu(playlist)) {
                     wchar_t save_path[PATH_LENGTH];
                     retrieve_file_path(ui.path_pool, playlist_path, save_path, PATH_LENGTH);
-                    save_playlist_to_file(*playlist, save_path);
+                    defer_save_playlist(playlist, save_path);
                 }
             }
             else {
@@ -2004,4 +2019,8 @@ static void begin_add_tracks_async_scan(Playlist *target) {
     ui.track_scan_progress.errors = 0;
     ui.track_scan_thread = thread_create(target, &async_file_scan_thread_func);
 }
-    
+
+static void defer_save_playlist(Playlist *playlist, const wchar_t *path) {
+    ui.deferred_playlist_save.playlist = playlist;
+    strncpy0(ui.deferred_playlist_save.path, path, PATH_LENGTH);
+}
