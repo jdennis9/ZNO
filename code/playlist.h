@@ -129,7 +129,7 @@ struct Playlist {
         return tracks.append_unique(track);
     }
     
-    inline bool add_track(const wchar_t *path) {
+    inline bool add_track(const char *path) {
         Track track = library_add_track(path);
         if (track) {
             return this->add_track(track);

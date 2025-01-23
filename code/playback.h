@@ -50,7 +50,7 @@ struct Playback_File_Info {
 };
 
 void playback_init();
-bool playback_load_file(const wchar_t *path);
+bool playback_load_file(const char *path);
 void playback_unload_file();
 void playback_set_paused(bool paused);
 void playback_toggle();

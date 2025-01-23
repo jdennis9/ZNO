@@ -5,7 +5,7 @@
 #include "filenames.h"
 #include <imgui.h>
 
-#define LAYOUTS_PATH L"Layouts"
+#define LAYOUTS_PATH "Layouts"
 
 struct Layout {
     char name[64];
@@ -25,7 +25,7 @@ static Layout g_builtin_layouts[] = {
 static Array<Custom_Layout> g_custom_layouts;
 
 void layout_init() {
-    if (!does_file_exist(L"imgui.ini")) {
+    if (!does_file_exist("imgui.ini")) {
         ImGui::LoadIniSettingsFromMemory(DEFAULT_LAYOUT_INI);
     }
 
@@ -33,13 +33,11 @@ void layout_init() {
         create_directory(LAYOUTS_PATH);
     }
 
-    auto iterator = [](void *dont_care, const wchar_t *wpath, bool is_folder) -> Recurse_Command {
+    auto iterator = [](void *dont_care, const char *path, bool is_folder) -> Recurse_Command {
         if (is_folder) return RECURSE_CONTINUE;
-        char path[PATH_LENGTH];
         Custom_Layout layout = {};
         u32 length_without_extension;
         const char *filename;
-        wchar_to_utf8(wpath, path, PATH_LENGTH);
 
         filename = get_file_name(path);
         length_without_extension = get_file_name_length_without_extension(filename);
@@ -66,7 +64,7 @@ void layout_show_selector() {
     for (const auto& layout : g_custom_layouts) {
         if (ImGui::MenuItem(layout.name)) {
             char path[PATH_LENGTH] = {};
-            snprintf(path, sizeof(path)-1, "%ls/%s.ini", LAYOUTS_PATH, layout.name);
+            snprintf(path, sizeof(path)-1, "%s/%s.ini", LAYOUTS_PATH, layout.name);
             ImGui::LoadIniSettingsFromDisk(path);
         }
     }
@@ -84,8 +82,8 @@ void layout_show_deleter() {
 
     if (delete_index >= 0) {
         Custom_Layout layout = g_custom_layouts[delete_index];
-        wchar_t path[PATH_LENGTH] = {};
-        _snwprintf(path, PATH_LENGTH-1, L"%s/%hs.ini", LAYOUTS_PATH, layout.name);
+        char path[PATH_LENGTH] = {};
+        snprintf(path, PATH_LENGTH-1, "%s/%s.ini", LAYOUTS_PATH, layout.name);
         delete_file(path);
 
         g_custom_layouts.ordered_remove(delete_index);
@@ -111,7 +109,7 @@ void layout_save_current(const char *name) {
 void layout_overwrite_with_current(i32 index) {
     Custom_Layout& layout = g_custom_layouts[index];
     char path[PATH_LENGTH] = {};
-    snprintf(path, PATH_LENGTH-1, "%ls/%s.ini", LAYOUTS_PATH, layout.name);
+    snprintf(path, PATH_LENGTH-1, "%s/%s.ini", LAYOUTS_PATH, layout.name);
     ImGui::SaveIniSettingsToDisk(path);
 }
 

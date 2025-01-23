@@ -95,10 +95,8 @@ static int theme_ini_handler(void *data, const char *section, const char *key, c
     return true;
 }
 
-static Recurse_Command add_theme_from_dir(void *dont_care, const wchar_t *path_u16, bool is_folder) {
+static Recurse_Command add_theme_from_dir(void *dont_care, const char *path, bool is_folder) {
     if (is_folder) return RECURSE_CONTINUE;
-    char path[512];
-    wchar_to_utf8(path_u16, path, sizeof(path));
     
     const char *filename = get_file_name(path);
     u32 length = get_file_name_length_without_extension(path);
@@ -115,7 +113,7 @@ static Recurse_Command add_theme_from_dir(void *dont_care, const wchar_t *path_u
 
 static void refresh_themes() {
     g_themes.clear();
-    for_each_file_in_folder(L"Themes\\", &add_theme_from_dir, NULL);
+    for_each_file_in_folder("Themes\\", &add_theme_from_dir, NULL);
 }
 
 void set_default_theme() {
@@ -162,8 +160,8 @@ void save_theme(const char *name) {
     strncpy0(prefs.theme, name, sizeof(prefs.theme));
     strncpy0(g_loaded_theme_name, name, sizeof(g_loaded_theme_name));
 
-    if (!does_file_exist(L"Themes")) {
-        create_directory(L"Themes");
+    if (!does_file_exist("Themes")) {
+        create_directory("Themes");
     }
     
     g_selected_theme = get_theme_index(name);

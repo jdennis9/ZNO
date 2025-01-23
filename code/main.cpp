@@ -48,7 +48,7 @@
 #define WINDOW_TITLE (L"ZNO MP " APP_VERSION_STRING)
 #define PREFS_PATH "Preferences.ini"
 #define HOTKEYS_PATH "Hotkeys.ini"
-#define METADATA_CACHE_PATH L"metadata.dat"
+#define METADATA_CACHE_PATH "metadata.dat"
 
 struct Window {
     int resize_width;
@@ -871,8 +871,10 @@ void tell_main_weve_dropped_the_drag_drop_payload() {
 }
 
 void add_to_file_drag_drop_payload(const wchar_t *path) {
+    char path_u8[PATH_LENGTH];
+    wchar_to_utf8(path, path_u8, PATH_LENGTH);
     g_drag_drop_payload.
-        offsets.append(g_drag_drop_payload.string_pool.append_array(path, (u32)wcslen(path)+1));
+        offsets.append(g_drag_drop_payload.string_pool.append_array(path_u8, (u32)strlen(path_u8)+1));
 }
 
 void clear_file_drag_drop_payload() {

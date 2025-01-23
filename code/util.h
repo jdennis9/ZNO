@@ -44,7 +44,7 @@ static inline bool string_contains_string_ignoring_case(const char *haystack, co
     return false;
 }
 
-static inline bool string_equal_ignoring_case(const wchar_t *a, const wchar_t *b) {
+static inline bool string_equal_ignoring_case(const char *a, const char *b) {
     for (; *a && *b; ++a, ++b) {
         if (to_lower(*a) != to_lower(*b)) return false;
     }

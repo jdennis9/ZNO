@@ -195,7 +195,7 @@ void playback_unload_file() {
     }
 }
 
-bool playback_load_file(const wchar_t *path) {
+bool playback_load_file(const char *path) {
     playback_unload_file();
     
     lock_mutex(g_lock);
@@ -208,7 +208,7 @@ bool playback_load_file(const wchar_t *path) {
     
     if (g_paused) playback_set_paused(false);
     
-    wlog_debug(L"Opened file %s for playback\n", path);
+    log_debug("Opened file %s for playback\n", path);
     
     return true;
 }

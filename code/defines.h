@@ -154,7 +154,7 @@ u32 wchar_to_utf8(const wchar_t *in, char *buffer, u32 buffer_size);
 u32 utf8_to_wchar(const char *in, wchar_t *buffer, u32 buffer_size);
 u64 perf_time_now();
 u64 perf_time_frequency();
-u64 read_whole_file(const wchar_t *path, void **buffer, bool null_terminate = false);
+u64 read_whole_file(const char *path, void **buffer, bool null_terminate = false);
 
 static inline float perf_time_to_millis(u64 ticks) {
     return ((float)ticks / (float)perf_time_frequency()) * 1000.f;

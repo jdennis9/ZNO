@@ -37,7 +37,7 @@ struct Decoder {
     i64 frame_index;
 };
 
-bool decoder_open(Decoder *dec, const wchar_t *filename);
+bool decoder_open(Decoder *dec, const char *filename);
 void decoder_close(Decoder *dec);
 Decode_Status decoder_decode(Decoder *dec, f32 *buffer, i32 frames, i32 channels, i32 samplerate);
 int decoder_get_bitrate(Decoder *dec);

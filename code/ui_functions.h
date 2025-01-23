@@ -118,8 +118,8 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
 void show_detailed_metadata_table(const char *str_id, const Detailed_Metadata& metadata, Texture *cover_art);
 // Show menu items to add files or folders to a playlist
 bool show_add_files_menu(Playlist *playlist);
-bool save_playlist_to_file(const Playlist& playlist, const wchar_t *path);
-bool load_playlist_from_file(const wchar_t *path, Playlist& playlist);
+bool save_playlist_to_file(const Playlist& playlist, const char *path);
+bool load_playlist_from_file(const char *path, Playlist& playlist);
 //-
 
 //-

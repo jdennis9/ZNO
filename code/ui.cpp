@@ -36,16 +36,14 @@
 #include <sys/stat.h>
 
 #define PLAYLIST_DIRECTORY "Playlists"
-#define PLAYLIST_DIRECTORY_W L"Playlists"
 #define DATA_DIRECTORY "Data"
-#define DATA_DIRECTORY_W L"Data"
-#define LIBRARY_PATH DATA_DIRECTORY_W "\\Library.txt"
-#define QUEUE_PATH DATA_DIRECTORY_W "\\Queue.txt"
+#define LIBRARY_PATH DATA_DIRECTORY "\\Library.txt"
+#define QUEUE_PATH DATA_DIRECTORY "\\Queue.txt"
 #define STATE_PATH DATA_DIRECTORY "\\State.ini"
 
-static const wchar_t *REQUIRED_DIRECTORIES[] = {
-    PLAYLIST_DIRECTORY_W,
-    DATA_DIRECTORY_W,
+static const char *REQUIRED_DIRECTORIES[] = {
+    PLAYLIST_DIRECTORY,
+    DATA_DIRECTORY,
 };
 
 static const char *SHUFFLE_ICON = u8"\xf074";
@@ -116,7 +114,7 @@ struct UI_State {
     Track metadata_editor_track;
 
     struct {
-        wchar_t path[PATH_LENGTH];
+        char path[PATH_LENGTH];
         Playlist *playlist;
     } deferred_playlist_save;
 
@@ -128,7 +126,7 @@ struct UI_State {
         std::atomic<u32> done;
     } track_scan_progress;
     struct {
-        Array<wchar_t> path_pool;
+        Array<char> path_pool;
         Array<u32> paths;
     } track_scan_buffer;
 
@@ -151,7 +149,7 @@ static void update_detailed_metadata();
 static void save_all_state();
 static void show_about();
 // Defer saving a playlist until after the async metadata retrieval is done
-static void defer_save_playlist(Playlist *playlist, const wchar_t *path);
+static void defer_save_playlist(Playlist *playlist, const char *path);
 
 static void add_to_albums(const Track& track) {
     Metadata track_md;
@@ -183,14 +181,14 @@ static void add_to_albums(const Track& track) {
     album.tracks.append_unique(track);
 }
 
-Recurse_Command add_tracks_to_async_scan(void *in_data, const wchar_t *path, bool is_folder) {
+Recurse_Command add_tracks_to_async_scan(void *in_data, const char *path, bool is_folder) {
     if (is_folder) {
         for_each_file_in_folder(path, &add_tracks_to_async_scan, NULL);
     }
     else {
-        size_t len = (u32)wcslen(path);
+        size_t len = (u32)strlen(path);
         size_t offset = ui.track_scan_buffer.path_pool.push(len+1);
-        memcpy(&ui.track_scan_buffer.path_pool[offset], path, len * sizeof(wchar_t));
+        memcpy(&ui.track_scan_buffer.path_pool[offset], path, len);
         ui.track_scan_buffer.path_pool[offset + len] = 0;
         ui.track_scan_buffer.paths.append(offset);
     }
@@ -290,13 +288,13 @@ static Playlist *get_selected_user_playlist(Path_Index *path = NULL) {
 
 static void save_user_playlist(u32 index) {
     Playlist& playlist = ui.user_playlists[index];
-    wchar_t path[PATH_LENGTH];
+    char path[PATH_LENGTH];
     retrieve_file_path(ui.path_pool, ui.user_playlist_paths[index], path, PATH_LENGTH);
     save_playlist_to_file(playlist, path);
 }
 
 static void play_track(const Track& track) {
-    wchar_t track_path[PATH_LENGTH];
+    char track_path[PATH_LENGTH];
     ui.current_track = track;
     library_get_track_path(track, track_path);
     playback_load_file(track_path);
@@ -455,7 +453,7 @@ static void update_detailed_metadata() {
     if (!track) return;
     
     if (ui.detailed_metadata_track != track) {
-        wchar_t path[PATH_LENGTH];
+        char path[PATH_LENGTH];
         Image cover_art;
         library_get_track_path(track, path);
         read_detailed_file_metadata(path, &ui.detailed_metadata, &cover_art);
@@ -490,7 +488,7 @@ static void show_metadata_editor() {
     }
 
     if (ui.metadata_editor_track != md_track) {
-        wchar_t path[PATH_LENGTH];
+        char path[PATH_LENGTH];
         md_track = ui.metadata_editor_track;
         library_get_track_path(md_track, path);
         read_detailed_file_metadata(path, &md);
@@ -543,7 +541,7 @@ static void show_metadata_editor() {
     ImGui::InputTextMultiline("##comment", md.comment, sizeof(md.comment));
 
     if (ImGui::Button("Save")) {
-        wchar_t path[PATH_LENGTH];
+        char path[PATH_LENGTH];
         Metadata_Index md_index = library_get_track_metadata_index(md_track);
         library_get_track_path(md_track, path);
         if (show_confirm_dialog("Confirm metadata update", "Overwrite metadata for file %ls?", path)) {
@@ -635,7 +633,7 @@ static void show_user_playlists() {
         if (commit) {
             status_line = validate_playlist_name(new_playlist_name);
             if (!status_line) {
-                wchar_t save_path[512];
+                char save_path[512];
                 Playlist new_playlist = {};
                 new_playlist.set_name(new_playlist_name);
                 
@@ -645,7 +643,7 @@ static void show_user_playlists() {
                     new_playlist.sort();
                 }
                 
-                generate_temporary_file_name(PLAYLIST_DIRECTORY_W, save_path, sizeof(save_path));
+                generate_temporary_file_name(PLAYLIST_DIRECTORY, save_path, sizeof(save_path));
                 save_playlist_to_file(new_playlist, save_path);
                 
                 ui.user_playlists.append(new_playlist);
@@ -706,7 +704,7 @@ static void show_user_playlists() {
     }
     
     if (action.user_altered_playlist) {
-        wchar_t save_path[PATH_LENGTH];
+        char save_path[PATH_LENGTH];
         const Playlist &playlist = ui.user_playlists[action.altered_playlist_index];
         retrieve_file_path(ui.path_pool, ui.user_playlist_paths[action.altered_playlist_index], 
                            save_path, PATH_LENGTH);
@@ -717,7 +715,7 @@ static void show_user_playlists() {
         u32 index = action.requested_delete_playlist_index;
         Playlist &playlist = ui.user_playlists[index];
         if (show_yes_no_dialog("Confirm Delete Playlist", "Delete playlist '%s'?", playlist.name)) {
-            wchar_t save_path[PATH_LENGTH];
+            char save_path[PATH_LENGTH];
             retrieve_file_path(ui.path_pool, ui.user_playlist_paths[index], 
                                save_path, PATH_LENGTH);
             delete_file(save_path);
@@ -835,7 +833,7 @@ static void show_selected_playlist() {
     
     if (begin_window_drag_drop_target("##playlist_drag_drop")) {
         altered |= accept_drag_drop_to_playlist(*playlist);
-        wchar_t path[PATH_LENGTH];
+        char path[PATH_LENGTH];
         retrieve_file_path(ui.path_pool, save_path, path, PATH_LENGTH);
         defer_save_playlist(playlist, path);
         ImGui::EndDragDropTarget();
@@ -851,7 +849,7 @@ static void show_selected_playlist() {
     }
     
     if (altered) {
-        wchar_t path[PATH_LENGTH];
+        char path[PATH_LENGTH];
         retrieve_file_path(ui.path_pool, save_path, path, PATH_LENGTH);
         save_playlist_to_file(*playlist, path);
     }
@@ -985,7 +983,7 @@ void show_ui() {
             if (playlist) {
                 ImGui::SeparatorText(playlist->name);
                 if (show_add_files_menu(playlist)) {
-                    wchar_t save_path[PATH_LENGTH];
+                    char save_path[PATH_LENGTH];
                     retrieve_file_path(ui.path_pool, playlist_path, save_path, PATH_LENGTH);
                     defer_save_playlist(playlist, save_path);
                 }
@@ -1364,7 +1362,7 @@ void show_ui() {
 
 void init_ui() {
     START_TIMER(init_ui, "Initialize UI");
-    for (const wchar_t *d : REQUIRED_DIRECTORIES) {
+    for (const char *d : REQUIRED_DIRECTORIES) {
         if (!does_file_exist(d)) {
             create_directory(d);
         }
@@ -1375,11 +1373,11 @@ void init_ui() {
     // Load playlists from Playlists folder
     {
         auto load_playlist_iterator = 
-        [](void *dont_care, const wchar_t *path, bool is_folder) -> Recurse_Command {
+        [](void *dont_care, const char *path, bool is_folder) -> Recurse_Command {
             u32 index = ui.user_playlists.push();
             Playlist& playlist = ui.user_playlists[index];
             playlist = Playlist{};
-            wlog_debug(L"Load playlist: %s\n", path);
+            log_debug("Load playlist: %s\n", path);
             if (load_playlist_from_file(path, playlist)) {
                 ui.user_playlist_paths.append(store_file_path(ui.path_pool, path));
             }
@@ -1389,7 +1387,7 @@ void init_ui() {
         };
         
         START_TIMER(load_playlists, "Load playlists");
-        for_each_file_in_folder(PLAYLIST_DIRECTORY_W, load_playlist_iterator, NULL);
+        for_each_file_in_folder(PLAYLIST_DIRECTORY, load_playlist_iterator, NULL);
         STOP_TIMER(load_playlists);
     }
     
@@ -1554,11 +1552,7 @@ static bool edit_path(const char *label, char *path, File_Type file_type) {
     
     ImGui::SameLine();
     if (ImGui::Button("Browse")) {
-        wchar_t wpath[PATH_LENGTH];
-        if (open_file_select_dialog(file_type, wpath, PATH_LENGTH)) {
-            wchar_to_utf8(wpath, path, PATH_LENGTH);
-            commit = true;
-        }
+        commit |= open_file_select_dialog(file_type, path, PATH_LENGTH);
     }
     
     ImGui::SameLine();
@@ -1935,7 +1929,7 @@ bool accept_drag_drop_to_playlist(Playlist& playlist) {
         const File_Drag_Drop_Payload& payload = get_file_drag_drop_payload();
         
         for (u32 i = 0; i < payload.offsets.count; ++i) {
-            const wchar_t *path = &payload.string_pool[payload.offsets[i]];
+            const char *path = &payload.string_pool[payload.offsets[i]];
             add_tracks_to_async_scan(NULL, path, is_path_a_folder(path));
         }
         begin_add_tracks_async_scan(&playlist);
@@ -1949,7 +1943,7 @@ static void show_about() {
     show_license_info();
 }
 
-static Recurse_Command async_file_scan_iterator(void *target_ptr, const wchar_t *path, bool is_folder) {
+static Recurse_Command async_file_scan_iterator(void *target_ptr, const char *path, bool is_folder) {
     Playlist *target = (Playlist*)target_ptr;
 
 
@@ -1975,7 +1969,7 @@ static Recurse_Command async_file_scan_iterator(void *target_ptr, const wchar_t 
     return RECURSE_CONTINUE;
 }
 
-static Recurse_Command file_counting_iterator(void *value_ptr, const wchar_t *path, bool is_folder) {
+static Recurse_Command file_counting_iterator(void *value_ptr, const char *path, bool is_folder) {
     u32 *value = (u32*)value_ptr;
 
     if (is_folder) {
@@ -1992,18 +1986,18 @@ static int async_file_scan_thread_func(void *target_ptr) {
     Playlist *target = (Playlist*)target_ptr;
     u32 input_count = ui.track_scan_buffer.paths.count;
     u32 file_count = 0;
-    const Array<wchar_t>& path_pool = ui.track_scan_buffer.path_pool;
+    const Array<char>& path_pool = ui.track_scan_buffer.path_pool;
     const Array<u32>& paths = ui.track_scan_buffer.paths;
 
     for (u32 i = 0; i < input_count; ++i) {
-        const wchar_t *path = &path_pool[paths[i]];
+        const char *path = &path_pool[paths[i]];
         file_counting_iterator(&file_count, path, is_path_a_folder(path));
     }
 
     ui.track_scan_progress.total_track_count = file_count;
 
     for (u32 i = 0; i < input_count; ++i) {
-        const wchar_t *path = &path_pool[paths[i]];
+        const char *path = &path_pool[paths[i]];
         async_file_scan_iterator(target, path, is_path_a_folder(path));
     }
 
@@ -2020,7 +2014,7 @@ static void begin_add_tracks_async_scan(Playlist *target) {
     ui.track_scan_thread = thread_create(target, &async_file_scan_thread_func);
 }
 
-static void defer_save_playlist(Playlist *playlist, const wchar_t *path) {
+static void defer_save_playlist(Playlist *playlist, const char *path) {
     ui.deferred_playlist_save.playlist = playlist;
     strncpy0(ui.deferred_playlist_save.path, path, PATH_LENGTH);
 }

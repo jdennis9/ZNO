@@ -52,7 +52,7 @@ enum {
 struct Preferences;
 
 struct File_Drag_Drop_Payload {
-    Array<wchar_t> string_pool;
+    Array<char> string_pool;
     // Offsets of paths into the string pool
     Array<u32> offsets;
 };

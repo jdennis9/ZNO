@@ -342,7 +342,7 @@ void update_playback_analyzers(f32 delta_ms) {
         Track track = ui_get_playing_track();
         g_metrics.need_update_waveform_preview = false;
         if (track && (track != wp->track)) {
-            wchar_t path[PATH_LENGTH];
+            char path[PATH_LENGTH];
             wp->track = track;
             library_get_track_path(track, path);
 

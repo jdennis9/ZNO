@@ -28,8 +28,9 @@
 static Array<u32> g_filename_hashes;
 static Array<Metadata> g_metadata;
 
-Metadata_Index read_file_metadata(const wchar_t *path) {
-    u32 filename_hash = hash_wstring(path);
+Metadata_Index read_file_metadata(const char *path) {
+    TagLib_File *file;
+    u32 filename_hash = hash_string(path);
     
     if (!g_metadata.count) {
         Metadata empty = {};
@@ -42,11 +43,14 @@ Metadata_Index read_file_metadata(const wchar_t *path) {
     
     i32 existing_index = linear_search(g_filename_hashes.data, g_filename_hashes.count, filename_hash);
     if (existing_index >= 0) return existing_index;
-    
-    char u8_path[PATH_LENGTH];
-    wchar_to_utf8(path, u8_path, PATH_LENGTH);
-    
-    TagLib_File *file = taglib_file_new_wchar_(path);
+
+#ifdef _WIN32
+    wchar_t path_win[PATH_LENGTH];
+    utf8_to_wchar(path, path_win, PATH_LENGTH);
+    file = taglib_file_new_wchar_(path_win);
+#else
+    file = tablib_file_new(path);
+#endif
     
     if (file) {
         defer(taglib_file_free(file));
@@ -68,7 +72,7 @@ Metadata_Index read_file_metadata(const wchar_t *path) {
             char *album = taglib_tag_album(tag);
             
             if (title && title[0]) strncpy0(metadata.title, title, sizeof(metadata.title));
-            else strncpy0(metadata.title, get_file_name(u8_path), sizeof(metadata.title));
+            else strncpy0(metadata.title, get_file_name(path), sizeof(metadata.title));
             
             if (artist) strncpy0(metadata.artist, artist, sizeof(metadata.artist));
             if (album) strncpy0(metadata.album, album, sizeof(metadata.album));
@@ -85,14 +89,21 @@ Metadata_Index read_file_metadata(const wchar_t *path) {
     u32 index;
     not_found.artist[0] = ' ';
     not_found.album[0] = ' ';
-    strncpy(not_found.title, get_file_name(u8_path), sizeof(not_found.title)-1);
+    strncpy(not_found.title, get_file_name(path), sizeof(not_found.title)-1);
     index = g_metadata.append(not_found);
     g_filename_hashes.append(filename_hash);
     return index;
 }
 
-bool update_file_metadata(Metadata_Index index, const wchar_t *path, Detailed_Metadata *new_md) {
-    TagLib_File *file = taglib_file_new_wchar_(path);
+bool update_file_metadata(Metadata_Index index, const char *path, Detailed_Metadata *new_md) {
+    TagLib_File *file;
+#ifdef _WIN32
+    wchar_t path_win[PATH_LENGTH];
+    utf8_to_wchar(path, path_win, PATH_LENGTH);
+    file = taglib_file_new_wchar_(path_win);
+#else
+    file = tablib_file_new(path);
+#endif
     Metadata *old_md = &g_metadata[index];
     if (!file) return false;
     defer(taglib_file_free(file));
@@ -115,8 +126,16 @@ bool update_file_metadata(Metadata_Index index, const wchar_t *path, Detailed_Me
     return taglib_file_save(file);
 }
 
-bool read_detailed_file_metadata(const wchar_t *path, Detailed_Metadata *md, Image *cover) {
-    TagLib_File *file = taglib_file_new_wchar_(path);
+bool read_detailed_file_metadata(const char *path, Detailed_Metadata *md, Image *cover) {
+    TagLib_File *file;
+    
+#ifdef _WIN32
+    wchar_t path_win[PATH_LENGTH];
+    utf8_to_wchar(path, path_win, PATH_LENGTH);
+    file = taglib_file_new_wchar_(path_win);
+#else
+    file = tablib_file_new(path);
+#endif
     
     if (cover) cover->data = NULL;
     
@@ -197,8 +216,8 @@ static inline u64 mread_u64(void **memory) {
     return value;
 }
 
-void save_metadata_cache(const wchar_t *path) {
-    FILE *f = _wfopen(path, L"wb");
+void save_metadata_cache(const char *path) {
+    FILE *f = fopen(path, "wb");
     if (!f) return;
     defer(fclose(f));
     
@@ -226,8 +245,8 @@ void save_metadata_cache(const wchar_t *path) {
     fwrite(sp.data, 1, sp.count, f);
 }
 
-void load_metadata_cache(const wchar_t *path) {
-    FILE *f = _wfopen(path, L"rb");
+void load_metadata_cache(const char *path) {
+    FILE *f = fopen(path, "rb");
     if (!f) return;
     defer(fclose(f));
     START_TIMER(load_metadata, "Load metadata");

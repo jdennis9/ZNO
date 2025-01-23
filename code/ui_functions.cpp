@@ -410,10 +410,10 @@ void show_detailed_metadata_table(const char *str_id, const Detailed_Metadata& m
     }
 }
 
-bool save_playlist_to_file(const Playlist& playlist, const wchar_t *filename) {
-    FILE *f = _wfopen(filename, L"w");
+bool save_playlist_to_file(const Playlist& playlist, const char *filename) {
+    FILE *f = fopen(filename, "w");
     if (!f) {
-        wlog_error(L"Failed to open file %s for writing\n", filename);
+        log_error("Failed to open file %s for writing\n", filename);
         return false;
     }
     defer(fclose(f));
@@ -510,7 +510,7 @@ static bool read_line(char **memory, char *buffer, int buffer_size) {
     return true;
 }
 
-bool load_playlist_from_file(const wchar_t *path, Playlist& playlist) {
+bool load_playlist_from_file(const char *path, Playlist& playlist) {
     char *buffer;
     char *f;
     if (!read_whole_file(path, (void**)&buffer, true)) return false;
@@ -541,9 +541,7 @@ bool load_playlist_from_file(const wchar_t *path, Playlist& playlist) {
     
     // Tracks
     while (read_line(&f, line, sizeof(line)) != 0) {
-        wchar_t track_path[PATH_LENGTH];
-        utf8_to_wchar(line, track_path, PATH_LENGTH);
-        playlist.add_track(track_path);
+        playlist.add_track(line);
     }
     
     return true;

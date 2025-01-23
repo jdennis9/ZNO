@@ -39,6 +39,12 @@ u32 utf8_to_wchar(const char *in, wchar_t *buffer, u32 buffer_size) {
     return (u32)ret;
 }
 
+wchar_t *lazy_convert_path(const char *str) {
+    static thread_local wchar_t buffer[PATH_LENGTH];
+    utf8_to_wchar(str, buffer, PATH_LENGTH);
+    return buffer;
+}
+
 Mutex create_mutex() {
     return CreateMutexA(NULL, FALSE, NULL);
 }
@@ -136,9 +142,9 @@ bool show_confirm_dialog(const char *title, const char *format, ...) {
     return MessageBoxA(NULL, message, title, MB_OKCANCEL|MB_ICONWARNING) == IDOK;
 }
 
-bool does_file_exist(const wchar_t *path) {
+bool does_file_exist(const char *path) {
     struct _stat st;
-    bool exists = _wstat(path, &st) == 0;
+    bool exists = _wstat(lazy_convert_path(path), &st) == 0;
     //wlog_debug(L"does_file_exist(%s) = %u\n", path, exists);
     return exists;
 }
@@ -189,7 +195,7 @@ static void set_default_extension(IFileDialog *d, File_Type type) {
     }
 }
 
-bool open_file_save_dialog(File_Type file_type, wchar_t *buffer, int buffer_size) {
+bool open_file_save_dialog(File_Type file_type, char *buffer, int buffer_size) {
     IFileSaveDialog *dialog = NULL;
     HRESULT error = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&dialog));
     if (error) {
@@ -216,8 +222,7 @@ bool open_file_save_dialog(File_Type file_type, wchar_t *buffer, int buffer_size
     LPWSTR result_path = NULL;
     result->GetDisplayName(SIGDN_FILESYSPATH, &result_path);
     if (result_path) {
-        wcsncpy(buffer, result_path, buffer_size-1);
-        buffer[buffer_size-1] = 0;
+        wchar_to_utf8(result_path, buffer, buffer_size);
         CoTaskMemFree(result_path);
         return true;
     }
@@ -225,7 +230,7 @@ bool open_file_save_dialog(File_Type file_type, wchar_t *buffer, int buffer_size
     return false;
 }
 
-static bool open_file_or_folder_select_dialog(File_Type type, wchar_t *buffer, int buffer_size, bool select_folders) {
+static bool open_file_or_folder_select_dialog(File_Type type, char *buffer, int buffer_size, bool select_folders) {
     IFileDialog *dialog = NULL;
     HRESULT error = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&dialog));
     
@@ -257,8 +262,7 @@ static bool open_file_or_folder_select_dialog(File_Type type, wchar_t *buffer, i
     LPWSTR result_path = NULL;
     result->GetDisplayName(SIGDN_FILESYSPATH, &result_path);
     if (result_path) {
-        wcsncpy(buffer, result_path, buffer_size-1);
-        buffer[buffer_size-1] = 0;
+        wchar_to_utf8(result_path, buffer, buffer_size);
         CoTaskMemFree(result_path);
         return true;
     }
@@ -266,11 +270,11 @@ static bool open_file_or_folder_select_dialog(File_Type type, wchar_t *buffer, i
     return false;
 }
 
-bool open_file_select_dialog(File_Type type, wchar_t *buffer, int buffer_size) {
+bool open_file_select_dialog(File_Type type, char *buffer, int buffer_size) {
     return open_file_or_folder_select_dialog(type, buffer, buffer_size, false);
 }
 
-bool open_folder_select_dialog(File_Type type, wchar_t *buffer, int buffer_size) {
+bool open_folder_select_dialog(File_Type type, char *buffer, int buffer_size) {
     return open_file_or_folder_select_dialog(type, buffer, buffer_size, true);
 }
 
@@ -303,8 +307,10 @@ bool open_file_multiselect_dialog(File_Type file_type, File_Iterator_Fn *iterato
     DWORD count = 0;
     results->GetCount(&count);
     for (u32 i = 0; i < count; ++i) {
+        char path_u8[PATH_LENGTH];
         LPWSTR path = NULL;
         IShellItem *item = NULL;
+
         results->GetItemAt(i, &item);
         if (!item) continue;
         
@@ -313,8 +319,9 @@ bool open_file_multiselect_dialog(File_Type file_type, File_Iterator_Fn *iterato
         
         if (!path) continue;
         defer(CoTaskMemFree(path));
-        
-        if (iterator(iterator_data, path, false) == RECURSE_STOP) return true;
+
+        wchar_to_utf8(path, path_u8, PATH_LENGTH);
+        if (iterator(iterator_data, path_u8, false) == RECURSE_STOP) return true;
     }
     
     return true;
@@ -348,6 +355,7 @@ bool open_folder_multiselect_dialog(File_Type type, File_Iterator_Fn *iterator, 
     DWORD count = 0;
     results->GetCount(&count);
     for (u32 i = 0; i < count; ++i) {
+        char path_u8[PATH_LENGTH];
         LPWSTR path = NULL;
         IShellItem *item = NULL;
         results->GetItemAt(i, &item);
@@ -359,15 +367,16 @@ bool open_folder_multiselect_dialog(File_Type type, File_Iterator_Fn *iterator, 
         if (!path) continue;
         defer(CoTaskMemFree(path));
         
-        if (iterator(iterator_data, path, true) == RECURSE_STOP) return true;
+        wchar_to_utf8(path, path_u8, PATH_LENGTH);
+        if (iterator(iterator_data, path_u8, true) == RECURSE_STOP) return true;
     }
     
     return true;
 }
 
-bool for_each_file_in_folder(const wchar_t *path, File_Iterator_Fn *iterator, void *iterator_data) {
+bool for_each_file_in_folder(const char *path, File_Iterator_Fn *iterator, void *iterator_data) {
     wchar_t path_buffer[PATH_LENGTH] = {};
-    _snwprintf(path_buffer, PATH_LENGTH-1, L"%s\\*", path);
+    _snwprintf(path_buffer, PATH_LENGTH-1, L"%s\\*", lazy_convert_path(path));
     
     WIN32_FIND_DATAW find_data;
     HANDLE find_handle;
@@ -378,30 +387,33 @@ bool for_each_file_in_folder(const wchar_t *path, File_Iterator_Fn *iterator, vo
     defer(FindClose(find_handle));
     
     do {
+        char path_u8[PATH_LENGTH];
         if (!wcscmp(find_data.cFileName, L".") || !wcscmp(find_data.cFileName, L"..")) continue;
-        _snwprintf(path_buffer, PATH_LENGTH, L"%s\\%s", path, find_data.cFileName);
-        iterator(iterator_data, path_buffer, (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
+
+        _snwprintf(path_buffer, PATH_LENGTH, L"%s\\%s", lazy_convert_path(path), find_data.cFileName);
+        wchar_to_utf8(path_buffer, path_u8, PATH_LENGTH);
+        iterator(iterator_data, path_u8, (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
         memset(path_buffer, 0, sizeof(path_buffer));
     } while (FindNextFileW(find_handle, &find_data));
     
     return true;
 }
 
-bool create_directory(const wchar_t *path) {
-    wlog_debug(L"create_directory(%s)\n", path);
-    return CreateDirectoryW(path, 0) == TRUE;
+bool create_directory(const char *path) {
+    log_debug("create_directory(%s)\n", path);
+    return CreateDirectoryW(lazy_convert_path(path), 0) == TRUE;
 }
 
-void generate_temporary_file_name(const wchar_t *base_path, wchar_t *buffer, int buffer_size) {
+void generate_temporary_file_name(const char *base_path, char *buffer, int buffer_size) {
     int num = rand();
     while (1) {
-        _snwprintf(buffer, buffer_size, L"%s\\%x", base_path, num);
+        snprintf(buffer, buffer_size, "%s\\%x", base_path, num);
         if (!does_file_exist(buffer)) return;
         num++;
     }
 }
 
-void show_last_error_in_message_box(const wchar_t *title) {
+void show_last_error_in_message_box(const char *title) {
     DWORD error_id = GetLastError();
     if (error_id == 0) return;
     
@@ -419,12 +431,12 @@ void show_last_error_in_message_box(const wchar_t *title) {
     MessageBoxW(NULL, message, caption, MB_ICONERROR);
 }
 
-void delete_file(const wchar_t *path) {
-    DeleteFileW(path);
+void delete_file(const char *path) {
+    DeleteFileW(lazy_convert_path(path));
 }
 
-bool is_path_a_folder(const wchar_t *path) {
-    return GetFileAttributesW(path) & FILE_ATTRIBUTE_DIRECTORY;
+bool is_path_a_folder(const char *path) {
+    return GetFileAttributesW(lazy_convert_path(path)) & FILE_ATTRIBUTE_DIRECTORY;
 }
 
 u64 perf_time_now() {
@@ -439,8 +451,8 @@ u64 perf_time_frequency() {
     return i.QuadPart;
 }
 
-u64 read_whole_file(const wchar_t *path, void **buffer, bool null_terminate) {
-    FILE *f = _wfopen(path, L"rb");
+u64 read_whole_file(const char *path, void **buffer, bool null_terminate) {
+    FILE *f = _wfopen(lazy_convert_path(path), L"rb");
     if (!f) return 0;
     
     setvbuf(f, NULL, _IOFBF, 8<<10);

@@ -17,9 +17,17 @@
 */
 #include "decoder.h"
 
-bool decoder_open(Decoder *dec, const wchar_t *filename) {
+bool decoder_open(Decoder *dec, const char *filename) {
     decoder_close(dec);
-    dec->file = sf_wchar_open(filename, SFM_READ, &dec->info);
+#ifdef _WIN32
+    {
+        wchar_t filename_u16[PATH_LENGTH] = {};
+        utf8_to_wchar(filename, filename_u16, PATH_LENGTH);
+        dec->file = sf_wchar_open(filename_u16, SFM_READ, &dec->info);
+    }
+#else
+    dec->file = sf_open(filename, SFM_READ, &dec->info);
+#endif
     return dec->file != nullptr;
 }
 

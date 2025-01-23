@@ -57,7 +57,7 @@ enum {
 };
 
 typedef int Recurse_Command;
-typedef Recurse_Command File_Iterator_Fn(void *data, const wchar_t *path, bool is_folder);
+typedef Recurse_Command File_Iterator_Fn(void *data, const char *path, bool is_folder);
 
 void init_platform();
 
@@ -71,18 +71,18 @@ void thread_destroy(Thread thread);
 void show_message_box(Message_Box_Type type, const char *format, ...);
 bool show_yes_no_dialog(const char *title, const char *format, ...);
 bool show_confirm_dialog(const char *title, const char *format, ...);
-bool does_file_exist(const wchar_t *path);
-bool open_file_select_dialog(File_Type file_type, wchar_t *buffer, int buffer_size);
-bool open_file_save_dialog(File_Type file_type, wchar_t *buffer, int buffer_size);
-bool open_folder_select_dialog(File_Type file_type, wchar_t *buffer, int buffer_size);
+bool does_file_exist(const char *path);
+bool open_file_select_dialog(File_Type file_type, char *buffer, int buffer_size);
+bool open_file_save_dialog(File_Type file_type, char *buffer, int buffer_size);
+bool open_folder_select_dialog(File_Type file_type, char *buffer, int buffer_size);
 bool open_file_multiselect_dialog(File_Type file_type, File_Iterator_Fn *iterator, void *iterator_data);
 bool open_folder_multiselect_dialog(File_Type file_type, File_Iterator_Fn *iterator, void *iterator_data);
-bool for_each_file_in_folder(const wchar_t *path, File_Iterator_Fn *iterator, void *iterator_data);
-bool create_directory(const wchar_t *path);
-void generate_temporary_file_name(const wchar_t *base_path, wchar_t *buffer, int buffer_size);
-void show_last_error_in_message_box(const wchar_t *title);
-void delete_file(const wchar_t *path);
-bool is_path_a_folder(const wchar_t *path);
+bool for_each_file_in_folder(const char *path, File_Iterator_Fn *iterator, void *iterator_data);
+bool create_directory(const char *path);
+void generate_temporary_file_name(const char *base_path, char *buffer, int buffer_size);
+void show_last_error_in_message_box(const char *title);
+void delete_file(const char *path);
+bool is_path_a_folder(const char *path);
 
 
 #endif //PLATFORM_H

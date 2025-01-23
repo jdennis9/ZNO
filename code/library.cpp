@@ -27,7 +27,7 @@ struct Library {
 static Library g_library;
 static Path_Pool g_path_pool;
 
-Track library_add_track(const wchar_t *path) {
+Track library_add_track(const char *path) {
     if (!is_supported_file(path)) return 0;
 
     Path_Index path_index = store_file_path(g_path_pool, path);
@@ -57,13 +57,6 @@ void library_get_track_metadata(Track track, Metadata *md) {
 Metadata_Index library_get_track_metadata_index(Track track) {
     ASSERT(track != 0);
     return g_library.metadata[track-1];
-}
-
-// Buffer must be at least PATH_LENGTH characters
-void library_get_track_path(Track track, wchar_t *buffer) {
-    ASSERT(track != 0);
-    u32 path_index = g_library.paths[track-1];
-    retrieve_file_path(g_path_pool, path_index, buffer, PATH_LENGTH);
 }
 
 void library_get_track_path(Track track, char *buffer) {
