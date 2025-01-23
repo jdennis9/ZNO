@@ -37,7 +37,6 @@
 #include <windowsx.h>
 //--------------------
 #include <imgui.h>
-#include <d3d10.h>
 #include <backends/imgui_impl_win32.h>
 #include <stb_image.h>
 

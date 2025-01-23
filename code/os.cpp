@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "platform.h"
+#include "os.h"
 #include <windows.h>
 #include <shlwapi.h>
 #include <shlobj.h>
@@ -23,9 +23,6 @@
 #include <sys/stat.h>
 #include <wchar.h>
 #include <ini.h>
-
-void init_platform() {
-}
 
 u32 wchar_to_utf8(const wchar_t *in, char *buffer, u32 buffer_size) {
     i32 ret = WideCharToMultiByte(CP_UTF8, 0, in, -1, buffer, buffer_size, NULL, NULL) - 1;
@@ -420,9 +417,9 @@ void show_last_error_in_message_box(const char *title) {
     DWORD format_flags = FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS;
     
     wchar_t message[512];
-    wchar_t caption[64];
+    wchar_t caption[64] = {};
     
-    _snwprintf(caption, 64, L"HRESULT %x", (u32)error_id);
+    _snwprintf(caption, 63, L"HRESULT %x", (u32)error_id);
     
     size_t size = FormatMessageW(format_flags, NULL, error_id, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                                  message, ARRAY_LENGTH(message), NULL);

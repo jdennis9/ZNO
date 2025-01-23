@@ -59,8 +59,6 @@ enum {
 typedef int Recurse_Command;
 typedef Recurse_Command File_Iterator_Fn(void *data, const char *path, bool is_folder);
 
-void init_platform();
-
 Mutex create_mutex();
 void lock_mutex(Mutex mutex);
 void unlock_mutex(Mutex mutex);
