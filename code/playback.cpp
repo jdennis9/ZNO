@@ -16,7 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "playback.h"
-#include "platform.h"
+#include "os.h"
 #include "audio.h"
 #include "main.h"
 #include "array.h"

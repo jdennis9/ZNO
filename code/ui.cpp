@@ -28,7 +28,7 @@
 #include "layout.h"
 #include "theme.h"
 #include "filenames.h"
-#include "platform.h"
+#include "os.h"
 #include <ini.h>
 #include <imgui.h>
 #include <atomic>

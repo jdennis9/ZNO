@@ -16,7 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "defines.h"
-#include "platform.h"
+#include "os.h"
 #include "playback.h"
 #include "ui.h"
 #include "main.h"

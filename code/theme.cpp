@@ -16,7 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "theme.h"
-#include "platform.h"
+#include "os.h"
 #include "main.h"
 #include "filenames.h"
 #include "preferences.h"

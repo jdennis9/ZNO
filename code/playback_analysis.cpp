@@ -21,7 +21,7 @@
 #include <atomic>
 #include "playback_analysis.h"
 #include "playback.h"
-#include "platform.h"
+#include "os.h"
 #include "ui.h"
 #include "decoder.h"
 

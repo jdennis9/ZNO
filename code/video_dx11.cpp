@@ -15,12 +15,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#ifdef _WIN32
 #include <d3d11.h>
 #include <dxgi.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx11.h>
 #include "defines.h"
-#include "platform.h"
+#include "os.h"
 #include "video.h"
 
 static ID3D11Device *g_device;
@@ -228,4 +229,4 @@ static void destroy_window_render_target() {
         g_render_target = NULL;
     }
 }
-
+#endif

@@ -16,7 +16,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "audio.h"
-#include "platform.h"
 #include <windows.h>
 #include <mmdeviceapi.h>
 #include <audioclient.h>

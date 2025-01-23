@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#ifndef PLATFORM_H
-#define PLATFORM_H
+#ifndef OS_H
+#define OS_H
 
 #include "defines.h"
 
@@ -83,4 +83,4 @@ void delete_file(const char *path);
 bool is_path_a_folder(const char *path);
 
 
-#endif //PLATFORM_H
+#endif //OS_H
