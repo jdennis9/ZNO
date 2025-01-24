@@ -74,7 +74,6 @@ int main(int argc, char *argv[])
     srand((int)time(NULL));
     
     platform_init();
-    playback_init();
 
     if (!does_file_exist(PLATFORM_PLAYLIST_PATH))
         create_directory(PLATFORM_PLAYLIST_PATH);
@@ -85,6 +84,9 @@ int main(int argc, char *argv[])
     snprintf(MAIN_IMGUI_INI_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "imgui.ini", PLATFORM_DATA_PATH);
     snprintf(MAIN_LAYOUTS_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "layouts", PLATFORM_DATA_PATH);
     snprintf(MAIN_PREFS_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "prefs.ini", PLATFORM_CONFIG_PATH);
+
+    theme_init();
+    playback_init();
 
     g_prefs.set_defaults();
     g_prefs.load_from_file(MAIN_PREFS_PATH);

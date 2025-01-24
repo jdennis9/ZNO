@@ -36,7 +36,7 @@
 
 #define WINDOW_CLASS_NAME L"ZNO_WINDOW_CLASS"
 #define WINDOW_TITLE (L"ZNO MP " APP_VERSION_STRING)
-#define HOTKEYS_PATH "Hotkeys.ini"
+#define HOTKEYS_PATH "hotkeys.ini"
 
 enum {
     HOTKEY_PREV_TRACK,

@@ -19,10 +19,13 @@
 #include "os.h"
 #include "main.h"
 #include "filenames.h"
+#include "platform.h"
 #include "preferences.h"
 #include <imgui.h>
 #include <ini.h>
 #include <assert.h>
+
+static char THEME_PATH[PATH_LENGTH];
 
 struct Font_Name {
     char name[128];
@@ -95,6 +98,14 @@ static int theme_ini_handler(void *data, const char *section, const char *key, c
     return true;
 }
 
+void theme_init() {
+    snprintf(THEME_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "themes", PLATFORM_CONFIG_PATH);
+
+    if (!does_file_exist(THEME_PATH)) {
+        create_directory(THEME_PATH);
+    }
+}
+
 static Recurse_Command add_theme_from_dir(void *dont_care, const char *path, bool is_folder) {
     if (is_folder) return RECURSE_CONTINUE;
     
@@ -113,7 +124,7 @@ static Recurse_Command add_theme_from_dir(void *dont_care, const char *path, boo
 
 static void refresh_themes() {
     g_themes.clear();
-    for_each_file_in_folder("Themes\\", &add_theme_from_dir, NULL);
+    for_each_file_in_folder(THEME_PATH, &add_theme_from_dir, NULL);
 }
 
 void set_default_theme() {
@@ -147,7 +158,7 @@ void load_theme(const char *name) {
     set_default_theme();
     
     char path[256];
-    snprintf(path, 256, "Themes\\%s.ini", name);
+    snprintf(path, 256, "%s" PATH_SEP_STR "%s.ini", THEME_PATH, name);
     ini_parse(path, &theme_ini_handler, NULL);
     
     style.SeparatorTextBorderSize = 1.f;
@@ -159,10 +170,6 @@ void save_theme(const char *name) {
     Preferences& prefs = get_preferences();
     strncpy0(prefs.theme, name, sizeof(prefs.theme));
     strncpy0(g_loaded_theme_name, name, sizeof(g_loaded_theme_name));
-
-    if (!does_file_exist("Themes")) {
-        create_directory("Themes");
-    }
     
     g_selected_theme = get_theme_index(name);
     if (g_selected_theme == UINT32_MAX) {
@@ -174,7 +181,7 @@ void save_theme(const char *name) {
     const Theme& theme = g_themes[g_selected_theme];
     ImGuiStyle& style = ImGui::GetStyle();
     
-    snprintf(path, 256, "Themes\\%s.ini", theme.name);
+    snprintf(path, 256, "%s" PATH_SEP_STR "%s.ini", THEME_PATH, theme.name);
     
     FILE *file = fopen(path, "w");
     if (!file) return;

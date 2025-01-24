@@ -30,6 +30,7 @@ enum Theme_Color {
     THEME_COLOR__COUNT,
 };
 
+void theme_init();
 void set_default_theme();
 void load_theme(const char *name);
 void save_theme(const char *name);
