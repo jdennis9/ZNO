@@ -16,16 +16,20 @@ struct Image {
 
 typedef void Texture;
 
-bool video_init(void *hwnd);
+#ifdef VIDEO_IMPL
+// window is HWND on Windows and GLFWwindow* on Linux
+bool video_init(void *window);
 // Make this a separate function to make it clear that the video subsystem
 // handles initializing ImGui
-void video_init_imgui(void *hwnd);
+void video_init_imgui(void *window);
 void video_deinit();
+void video_resize_window(int width, int height);
+#endif
+
 // Returns true if it is ok to render
 bool video_begin_frame();
 // Returns true if the window is visible
 bool video_end_frame();
-void video_resize_window(int width, int height);
 
 void video_invalidate_imgui_objects();
 void video_create_imgui_objects();

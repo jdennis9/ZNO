@@ -21,7 +21,7 @@
 #include "defines.h"
 #include "array.h"
 #include "playlist.h"
-#include "platform.h"
+#include "os.h"
 #include "video.h"
 #include <imgui.h>
 

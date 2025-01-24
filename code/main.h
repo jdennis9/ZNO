@@ -40,15 +40,6 @@ enum {
     NOTIFY_BRING_WINDOW_TO_FOREGROUND,
 };
 
-enum {
-    HOTKEY_PREV_TRACK,
-    HOTKEY_NEXT_TRACK,
-    HOTKEY_TOGGLE_PLAYBACK,
-    HOTKEY__LAST = HOTKEY_TOGGLE_PLAYBACK,
-};
-
-#define HOTKEY__COUNT (HOTKEY__LAST+1)
-
 struct Preferences;
 
 struct File_Drag_Drop_Payload {
@@ -59,14 +50,9 @@ struct File_Drag_Drop_Payload {
 
 void notify(int message);
 void capture_next_input_and_bind_to_hotkey(int hotkey);
-f32 get_dpi_scale();
-void resize_main_window(int width, int height);
 
 const File_Drag_Drop_Payload& get_file_drag_drop_payload();
-bool is_hotkey_being_captured(int hotkey);
-// Returns true if the hotkey is bound. If the hotkey is not bound, the buffer is unchanged
-bool get_hotkey_bind_string(int hotkey, char *buffer, int buffer_size);
-const char *get_hotkey_name(int hotkey);
+
 // Get main preferences
 Preferences& get_preferences();
 // Notify main that we have made a change to

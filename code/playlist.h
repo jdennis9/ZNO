@@ -20,7 +20,7 @@
 
 #include "defines.h"
 #include "array.h"
-#include "platform.h"
+#include "os.h"
 #include "util.h"
 #include "library.h"
 #include <stdlib.h>

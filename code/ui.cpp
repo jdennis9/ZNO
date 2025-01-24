@@ -29,6 +29,7 @@
 #include "theme.h"
 #include "filenames.h"
 #include "os.h"
+#include "platform.h"
 #include <ini.h>
 #include <imgui.h>
 #include <atomic>
@@ -141,7 +142,6 @@ struct UI_State {
 static UI_State ui;
 
 static void show_prefs_editor();
-static void show_hotkey_editor();
 static void show_file_info();
 static void show_wave_bar();
 static void show_folders_view();
@@ -1058,7 +1058,7 @@ void show_ui() {
                 snprintf(name, sizeof(name)-1, "Set window to %dx%d", p.w, p.h);
 
                 if (ImGui::MenuItem(name)) {
-                    resize_main_window(p.w, p.h);
+                    platform_resize_window(p.w, p.h);
                 }
             }
 
@@ -1339,16 +1339,18 @@ void show_ui() {
     }
     //-
     
+#ifdef _WIN32
     //-
     // Hotkey editor
     if (ui.show_hotkeys) {
         if (ImGui::Begin("Edit hotkeys", &ui.show_hotkeys)) {
-            show_hotkey_editor();
+            platform_windows_show_hotkey_editor();
         }
         ImGui::End();
     }
     //-
-    
+#endif
+
     //-
     // About
     if (ui.show_about_window) {
@@ -1437,9 +1439,10 @@ void init_ui() {
     
     // Load mini font
     {
-        f32 scaled_size = get_dpi_scale() * 9.f;
+        f32 scaled_size = platform_get_dpi_scale() * 9.f;
         ImFontConfig cfg = ImFontConfig();
         
+        // @FixForLinux
         ui.mini_font = ui.mini_font_atlas.AddFontFromFileTTF("C:\\Windows\\Fonts\\seguisb.ttf", scaled_size, &cfg);
         ui.mini_font_atlas.Build();
         
@@ -1650,38 +1653,6 @@ static void show_prefs_editor() {
         ImGui::EndTable();
     }
     if (apply) apply_preferences();
-}
-
-static void show_hotkey_editor() {
-    ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg|ImGuiTableFlags_BordersInner;
-    
-    if (ImGui::BeginTable("##hotkeys", 2, table_flags)) {
-        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.3f);
-        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0.7f);
-        char value[256];
-        
-        for (int i = 0; i < HOTKEY__COUNT; ++i) {
-            const char *name = get_hotkey_name(i);
-            bool being_captured = is_hotkey_being_captured(i);
-            ImGui::PushID(name);
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::TextUnformatted(name);
-            ImGui::TableSetColumnIndex(1);
-            if (being_captured) ImGui::SetKeyboardFocusHere();
-            if (get_hotkey_bind_string(i, value, sizeof(value))) {
-                if (ImGui::Selectable(value, being_captured)) {
-                    capture_next_input_and_bind_to_hotkey(i);
-                }
-            }
-            else if (ImGui::Selectable("##not_set", being_captured)) {
-                capture_next_input_and_bind_to_hotkey(i);
-            }
-            ImGui::PopID();
-        }
-        
-        ImGui::EndTable();
-    }
 }
 
 static void show_file_info() {

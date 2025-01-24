@@ -76,7 +76,6 @@ bool video_init(void *hwnd) {
 }
 
 void video_init_imgui(void *hwnd) {
-    ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_device, g_context);
 }
 

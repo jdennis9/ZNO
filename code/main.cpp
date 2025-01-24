@@ -20,6 +20,7 @@
 #include "playback.h"
 #include "ui.h"
 #include "main.h"
+#define VIDEO_IMPL
 #include "video.h"
 #include "theme.h"
 #include "font_awesome.h"
@@ -30,33 +31,13 @@
 #include <stdarg.h>
 #include <time.h>
 #include <locale.h>
-#include <windows.h>
-//--------------------
-// For dark title bar
-#include <dwmapi.h>
-#include <windowsx.h>
-//--------------------
 #include <imgui.h>
-#include <backends/imgui_impl_win32.h>
 #include <stb_image.h>
 
 #include "drag_drop.h"
-#include "media_controls.h"
 
 #define WINDOW_CLASS_NAME L"ZNO_WINDOW_CLASS"
 #define WINDOW_TITLE (L"ZNO MP " APP_VERSION_STRING)
-#define PREFS_PATH "Preferences.ini"
-#define HOTKEYS_PATH "Hotkeys.ini"
-#define METADATA_CACHE_PATH "metadata.dat"
-
-struct Window {
-    int resize_width;
-    int resize_height;
-    int width;
-    int height;
-    float dpi_scale;
-    bool is_obscured;
-};
 
 struct Main_Flags {
     bool reload_font;
@@ -68,58 +49,24 @@ struct Background {
     i32 width, height;
 };
 
-struct Hotkey {
-    UINT mods;
-    UINT vk;
-};
-
-static HWND g_hwnd;
-static Window g_window;
+static float g_dpi_scale;
+static bool g_obscured;
 static Main_Flags g_flags;
 static Background g_background;
-static Hotkey g_hotkeys[HOTKEY__COUNT];
-static bool g_hotkey_is_bound[HOTKEY__COUNT];
 static Preferences g_prefs;
 static bool g_prefs_dirty;
 static bool g_need_load_font;
 static bool g_need_load_background;
-static bool g_capture_next_input;
-static int g_capture_input_target;
-static HMENU g_tray_popup;
-static HICON g_icon;
 static File_Drag_Drop_Payload g_drag_drop_payload;
 static bool g_have_drag_drop_payload;
 static bool g_drag_drop_done;
-#ifdef NDEBUG
-// Shared event for making sure there is only one instance of ZNO running
-static HANDLE g_foreground_event;
-#endif
-
-IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 static void load_font(const char *path, int size, int icon_size, float dpi_scale);
 static void set_background_image(const char *path);
 static void render_background();
-static bool is_key_down(int vk) {return (GetKeyState(vk) * 0x8000) != 0;}
-static void load_hotkeys();
-static void apply_hotkeys();
-static void create_tray_icon();
-static void remove_tray_icon();
 static void update_background();
 static void update_font();
 
-#ifdef NDEBUG
-static int foreground_listener(void *dont_care) {
-    while (1) {
-        if (WaitForSingleObject(g_foreground_event, INFINITE) == WAIT_OBJECT_0) {
-            notify(NOTIFY_BRING_WINDOW_TO_FOREGROUND);
-        }
-    }
-
-    return 0;
-}
-#endif
 
 #ifdef DEF_WIN_MAIN
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -127,84 +74,23 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 int main(int argc, char *argv[])
 #endif
 {
-#ifndef DEF_WIN_MAIN
-    HINSTANCE hInstance = GetModuleHandle(NULL);
-#endif
-
-#ifdef NDEBUG
-    // Check if there is another instance of ZNO running. If there is, send it a message to
-    // bring the window to the foreground
-    g_foreground_event = CreateEventW(NULL, FALSE, FALSE, L"ZNO_INSTANCE");
-    if (GetLastError() == ERROR_ALREADY_EXISTS) {
-        g_foreground_event = OpenEventW(EVENT_ALL_ACCESS, FALSE, L"ZNO_INSTANCE");
-        if (g_foreground_event && g_foreground_event != INVALID_HANDLE_VALUE) {
-            SetEvent(g_foreground_event);
-            CloseHandle(g_foreground_event);
-        }
-        return 0;
-    }
-    defer(CloseHandle(g_foreground_event));
-
-    Thread foreground_listener_thread = thread_create(NULL, &foreground_listener);
-    defer(thread_destroy(foreground_listener_thread));
-#endif
-
-    ImGui_ImplWin32_EnableDpiAwareness();
-    (void)OleInitialize(NULL);
-    (void)CoInitializeEx(NULL, COINIT_MULTITHREADED);
     setlocale(LC_ALL, ".65001");
     srand((int)time(NULL));
-    g_prefs.set_defaults();
-    g_prefs.load_from_file(PREFS_PATH);
-    g_icon = LoadIconA(hInstance, "WindowIcon");
     
+    platform_init();
     playback_init();
-    init_platform();
-    install_media_controls_handler();
-    
-    // Register window class
-    {
-        WNDCLASSEXW wc = {};
-        wc.cbSize = sizeof(wc);
-        wc.style = CS_OWNDC;
-        wc.lpfnWndProc = &window_proc;
-        wc.lpszClassName = WINDOW_CLASS_NAME;
-        wc.hInstance = hInstance;
-        wc.hIcon = g_icon;
-        RegisterClassExW(&wc);
-    }
-    
-    // Create window
-    g_hwnd = CreateWindowExW(WS_EX_ACCEPTFILES,
-                             WINDOW_CLASS_NAME,
-                             WINDOW_TITLE,
-                             WS_OVERLAPPEDWINDOW,
-                             CW_USEDEFAULT,
-                             CW_USEDEFAULT,
-                             CW_USEDEFAULT,
-                             CW_USEDEFAULT,
-                             NULL,
-                             NULL,
-                             hInstance,
-                             NULL);
-    // Set dark title bar
-    {
-        BOOL on = TRUE;
-        DwmSetWindowAttribute(g_hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &on, sizeof(on));
-    }
-    
-    UpdateWindow(g_hwnd);
 
-    g_window.dpi_scale = ImGui_ImplWin32_GetDpiScaleForHwnd(g_hwnd);
+    g_prefs.set_defaults();
+    g_prefs.load_from_file(PLATFORM_PREFS_PATH);
+
+    g_dpi_scale = platform_get_dpi_scale();
 
     //-
     // Initialize DirectX and ImGui
     START_TIMER(init_video, "Initialize DirectX and ImGui");
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
-    video_init(g_hwnd);
-    video_init_imgui(g_hwnd);
-    defer(video_deinit());
+    platform_init_imgui();
     STOP_TIMER(init_video);
     //-
     
@@ -217,7 +103,7 @@ int main(int argc, char *argv[])
     
     //-
     // Load cached stuff. Needs to go before init_ui()
-    load_metadata_cache(METADATA_CACHE_PATH);
+    load_metadata_cache(PLATFORM_METADATA_PATH);
     //-
     
     // Initialize UI before showing the window to avoid
@@ -227,58 +113,20 @@ int main(int argc, char *argv[])
     //-
     // Load preferences and hotkeys
     apply_preferences();
-    load_hotkeys();
-    apply_hotkeys();
     //-
     
     // Load font and background before showing the window
     update_background();
     update_font();
-
-    create_tray_icon();
-    init_drag_drop(g_hwnd);
     
-    ShowWindow(g_hwnd, SW_NORMAL);
+    platform_show_window(true);
 
     bool running = true;
     while (running) {
-        MSG msg;
-        
-        if (IsWindowVisible(g_hwnd)) {
-            while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-                if (msg.message == WM_QUIT) {
-                    log_debug("Received WM_QUIT\n");
-                    running = false;
-                    break;
-                }
-            }
-        }
-        else {
-            GetMessageA(&msg, NULL, 0, 0);
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-            if (msg.message == WM_QUIT) {
-                running = false;
-                log_debug("Received WM_QUIT\n");
-            }
-            continue;
-        }
+        platform_poll_events();
 
         if (g_prefs_dirty) {
-            g_prefs.save_to_file(PREFS_PATH);
-        }
-        
-        if (!running) break;
-        
-        // Window is minimized
-        if (g_window.is_obscured) Sleep(20);
-        
-        // Resize window
-        if (g_window.resize_width != 0) {
-            video_resize_window(g_window.resize_width, g_window.resize_height);
-            g_window.resize_width = g_window.resize_height = 0;
+            g_prefs.save_to_file(PLATFORM_PREFS_PATH);
         }
         
         // Load font and background if changed
@@ -309,278 +157,20 @@ int main(int argc, char *argv[])
             render_background();
             ImGui::Render();
 
-            g_window.is_obscured = !video_end_frame();
+            g_obscured = !video_end_frame();
         }
     }
     
-    g_prefs.save_to_file(PREFS_PATH);
-    remove_tray_icon();
-    save_metadata_cache(METADATA_CACHE_PATH);
+    g_prefs.save_to_file(PLATFORM_PREFS_PATH);
+    save_metadata_cache(PLATFORM_METADATA_PATH);
     destroy_texture(&g_background.texture);
+    platform_deinit();
     
     return 0;
 }
 
-static void unregister_hotkeys() {
-    for (u32 i = 0; i < HOTKEY__COUNT; ++i) {
-        if (g_hotkey_is_bound[i]) {
-            UnregisterHotKey(g_hwnd, i);
-            g_hotkey_is_bound[i] = false;
-        }
-    }
-}
-
-const char *get_hotkey_name(int hotkey) {
-    switch (hotkey) {
-        case HOTKEY_PREV_TRACK: return "PrevTrack";
-        case HOTKEY_NEXT_TRACK: return "NextTrack";
-        case HOTKEY_TOGGLE_PLAYBACK: return "TogglePlayback";
-    }
-    ASSERT(false && "Forgot to add hotkey name");
-    return NULL;
-}
-
-static void load_hotkeys() {
-    for (u32 i = 0; i < HOTKEY__COUNT; ++i) {
-        if (g_hotkey_is_bound[i]) {
-            UnregisterHotKey(g_hwnd, i);
-            log_debug("Unregister hot key %d\n", i);
-            g_hotkey_is_bound[i] = false;
-        }
-    }
-    
-    auto callback =
-    [](void *dont_care, const char *section, const char *key, const char *value) -> int {
-        for (int i = 0; i < HOTKEY__COUNT; ++i) {
-            const char *hk_name = get_hotkey_name(i);
-            char mods_name[64];
-            char key_name[64];
-            snprintf(mods_name, sizeof(mods_name), "%sMods", hk_name);
-            snprintf(key_name, sizeof(key_name), "%sKey", hk_name);
-            
-            if (!strcmp(key, mods_name)) {
-                g_hotkey_is_bound[i] = true;
-                g_hotkeys[i].mods = (UINT)strtoll(value, NULL, 16);
-            }
-            else if (!strcmp(key, key_name)) {
-                g_hotkey_is_bound[i] = true;
-                g_hotkeys[i].vk = (UINT)strtoll(value, NULL, 16);
-            }
-        }
-        
-        return 1;
-    };
-    
-    ini_parse(HOTKEYS_PATH, callback, NULL);
-}
-
-static void save_hotkeys() {
-    FILE *f = fopen(HOTKEYS_PATH, "w");
-    if (!f) return;
-    
-    fprintf(f, "[Hotkeys]\n");
-    
-    for (int i = 0; i < HOTKEY__COUNT; ++i) {
-        if (!g_hotkey_is_bound[i]) continue;
-        Hotkey hk = g_hotkeys[i];
-        const char *hk_name = get_hotkey_name(i);
-        char mods_name[64];
-        char key_name[64];
-        snprintf(mods_name, sizeof(mods_name), "%sMods", hk_name);
-        snprintf(key_name, sizeof(key_name), "%sKey", hk_name);
-        
-        fprintf(f, "%s = %x\n", mods_name, hk.mods);
-        fprintf(f, "%s = %x\n", key_name, hk.vk);
-    }
-    
-    fclose(f);
-}
-
-static void apply_hotkeys() {
-    for (int i = 0; i < HOTKEY__COUNT; ++i) {
-        if (g_hotkey_is_bound[i]) {
-            log_debug("Register hotkey %d\n", i);
-            Hotkey hk = g_hotkeys[i];
-            UnregisterHotKey(g_hwnd, i);
-            if (!RegisterHotKey(g_hwnd, i, hk.mods|MOD_NOREPEAT, hk.vk)) {
-                log_warning("Could not register hotkey %s\n", get_hotkey_name(i));
-            }
-            g_hotkey_is_bound[i] = true;
-        }
-    }
-    
-    save_hotkeys();
-}
-
 void notify(int message) {
-    PostMessageW(g_hwnd, WM_USER+message, 0, 0);
-}
-
-f32 get_dpi_scale() {
-    return g_window.dpi_scale;
-}
-
-void resize_main_window(int width, int height) {
-    SetWindowPos(g_hwnd, 0, 0, 0, width, height, 0);
-}
-
-static LRESULT WINAPI window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-        return true;
-    
-    // Capture next input and bind it to a hotkey
-    if (g_capture_next_input && (msg == WM_KEYDOWN)) {
-        WPARAM vk = wParam;
-        UINT mods = 0;
-        if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) mods |= MOD_CONTROL;
-        if (ImGui::IsKeyDown(ImGuiMod_Shift)) mods |= MOD_SHIFT;
-        if (ImGui::IsKeyDown(ImGuiMod_Alt)) mods |= MOD_ALT;
-        
-        if (vk == VK_ESCAPE) {
-            g_capture_next_input = false;
-            apply_hotkeys();
-        }
-        else if (vk != VK_SHIFT && vk != VK_CONTROL && vk != VK_MENU) {
-            g_capture_next_input = false;
-            g_hotkey_is_bound[g_capture_input_target] = true;
-            g_hotkeys[g_capture_input_target].mods = mods;
-            g_hotkeys[g_capture_input_target].vk = (UINT)vk;
-            apply_hotkeys();
-        }
-    }
-    
-    switch (msg) {
-        case WM_SIZE: {
-            g_window.resize_width = LOWORD(lParam);
-            g_window.resize_height = HIWORD(lParam);
-            g_window.width = g_window.resize_width;
-            g_window.height = g_window.resize_height;
-            return 0;
-        }
-        
-        case WM_GETMINMAXINFO: {
-            LPMINMAXINFO info = (LPMINMAXINFO)lParam;
-            info->ptMinTrackSize.x = 500;
-            info->ptMinTrackSize.y = 500;
-            break;
-        }
-        
-        case WM_CLOSE: {
-            switch (g_prefs.close_policy) {
-                case CLOSE_POLICY_ALWAYS_ASK:
-                if (MessageBoxA(NULL, "Minimize to tray?", "Closing Player", MB_YESNO | MB_ICONQUESTION) == IDYES)
-                    ShowWindow(hWnd, SW_HIDE);
-                else
-                    PostQuitMessage(0);
-                break;
-                case CLOSE_POLICY_MINIMIZE_TO_TRAY:
-                notify(NOTIFY_MINIMIZE_TO_TRAY);
-                break;
-                case CLOSE_POLICY_EXIT:
-                PostQuitMessage(0);
-                break;
-            }
-            return 0;
-        }
-        
-        // Handle events from tray icon
-        case WM_APP + 1: {
-            // User clicked on tray icon, bring the window to front
-            if (LOWORD(lParam) == WM_LBUTTONDOWN) {
-                ShowWindow(hWnd, SW_SHOW);
-                SetForegroundWindow(hWnd);
-            }
-            else if (LOWORD(lParam) == WM_RBUTTONDOWN) {
-                POINT mouse;
-                GetCursorPos(&mouse);
-                TrackPopupMenuEx(g_tray_popup, TPM_LEFTBUTTON, mouse.x, mouse.y, hWnd, NULL);
-                PostMessage(hWnd, WM_NULL, 0, 0);
-            }
-            return 0;
-        }
-        
-        // Handle context menu from tray icon
-        case WM_COMMAND: {
-            if (wParam == 1) {
-                PostQuitMessage(0);
-            }
-            return 0;
-        }
-        
-        case WM_DPICHANGED: {
-            g_window.dpi_scale = ImGui_ImplWin32_GetDpiScaleForHwnd(g_hwnd);
-            g_flags.reload_font = true;
-            return 0;
-        }
-        
-        case WM_HOTKEY: {
-            log_debug("WM_HOTKEY: %lld\n", wParam);
-            switch (wParam) {
-                case HOTKEY_TOGGLE_PLAYBACK:
-                playback_toggle();
-                break;
-                case HOTKEY_NEXT_TRACK:
-                ui_play_next_track();
-                break;
-                case HOTKEY_PREV_TRACK:
-                ui_play_previous_track();
-                break;
-            }
-            return 0;
-        }
-
-        
-        case WM_USER+NOTIFY_QUIT: {
-            PostQuitMessage(0);
-            return 0;
-        }
-        
-        case WM_USER+NOTIFY_MINIMIZE_TO_TRAY: {
-            ShowWindow(hWnd, SW_HIDE);
-            return 0;
-        }
-
-        case WM_USER+NOTIFY_REQUEST_PAUSE: {
-            playback_set_paused(true);
-            update_media_controls_state();
-            return 0;
-        }
-
-        case WM_USER+NOTIFY_REQUEST_PLAY: {
-            playback_set_paused(false);
-            update_media_controls_state();
-            return 0;
-        }
-
-        case WM_USER+NOTIFY_REQUEST_PREV_TRACK: {
-            ui_play_previous_track();
-            return 0;
-        }
-
-        case WM_USER+NOTIFY_REQUEST_NEXT_TRACK: {
-            ui_play_next_track();
-            return 0;
-        }
-
-        case WM_USER+NOTIFY_PLAYBACK_STATE_CHANGE: {
-            update_media_controls_state();
-            return 0;
-        }
-
-        case WM_USER+NOTIFY_NEW_TRACK_PLAYING: {
-            update_media_controls_metadata(ui_get_playing_track());
-            update_media_controls_state();
-            return 0;
-        }
-
-        case WM_USER+NOTIFY_BRING_WINDOW_TO_FOREGROUND: {
-            ShowWindow(hWnd, SW_SHOW);
-            SetForegroundWindow(hWnd);
-            return 0;
-        }
-    }
-    
-    return DefWindowProcW(hWnd, msg, wParam, lParam);
+    platform_notify(message);
 }
 
 static void render_background() {
@@ -590,8 +180,10 @@ static void render_background() {
         
         int width = g_background.width;
         int height = g_background.height;
-        int winwidth = g_window.width;
-        int winheight = g_window.height;
+        int winwidth;
+        int winheight;
+
+        platform_get_window_size(&winwidth, &winheight);
         
         if ((height < winheight) || (height > winheight)) {
             float ratio = (float)winheight / (float)height;
@@ -716,7 +308,7 @@ static void update_font() {
     if (g_need_load_font) {
         START_TIMER(load_font, "Load font");
         load_font(g_prefs.font[0] ? g_prefs.font : NULL, g_prefs.font_size, 
-                  g_prefs.icon_font_size, g_window.dpi_scale);
+                  g_prefs.icon_font_size, g_dpi_scale);
         g_need_load_font = false;
         STOP_TIMER(load_font);
     }
@@ -740,61 +332,6 @@ void free_image(Image *image) {
     if (image->data) stbi_image_free(image->data);
 }
 
-bool get_hotkey_bind_string(int index, char *buffer, int buffer_size) {
-    if (!g_hotkey_is_bound[index]) return false;
-    Hotkey hotkey = g_hotkeys[index];
-    UINT m = hotkey.mods;
-    
-    if (m & MOD_CONTROL) {
-        const char *c = "Ctrl + ";
-        int len = (int)strlen(c);
-        strncpy0(buffer, c, buffer_size);
-        buffer_size -= len;
-        buffer += len;
-    }
-    
-    if (buffer_size < 0) return true;
-    
-    if (m & MOD_SHIFT) {
-        const char *c = "Shift + ";
-        int len = (int)strlen(c);
-        strncpy0(buffer, c, buffer_size);
-        buffer_size -= len;
-        buffer += len;
-    }
-    
-    if (buffer_size < 0) return true;
-    
-    if (m & MOD_ALT) {
-        const char *c = "Alt + ";
-        int len = (int)strlen(c);
-        strncpy0(buffer, c, buffer_size);
-        buffer_size -= len;
-        buffer += len;
-    }
-    
-    if (buffer_size < 0) return true;
-    
-    UINT scancode = MapVirtualKeyA(hotkey.vk, MAPVK_VK_TO_VSC);
-    char key_name[64];
-    
-    GetKeyNameTextA(scancode << 16, key_name, sizeof(key_name));
-    
-    strncpy0(buffer, key_name, buffer_size);
-    
-    return true;
-}
-
-void capture_next_input_and_bind_to_hotkey(int hotkey) {
-    g_capture_next_input = true;
-    g_capture_input_target = hotkey;
-    g_hotkey_is_bound[hotkey] = false;
-    UnregisterHotKey(g_hwnd, hotkey);
-}
-
-bool is_hotkey_being_captured(int hotkey) {
-    return g_capture_next_input && g_capture_input_target == hotkey;
-}
 
 Preferences& get_preferences() {
     return g_prefs;
@@ -809,43 +346,10 @@ void apply_preferences() {
     g_need_load_background = true;
     g_need_load_font = true;
     load_theme(prefs.theme);
-    g_prefs.save_to_file(PREFS_PATH);
+    g_prefs.save_to_file(PLATFORM_PREFS_PATH);
+    platform_apply_preferences();
 }
 
-static void create_tray_icon() {
-    NOTIFYICONDATAA data = {};
-    
-    data.cbSize = sizeof(data);
-    data.hWnd = g_hwnd;
-    data.uID = 1;
-    data.uFlags = NIF_TIP | NIF_MESSAGE | NIF_ICON;
-    data.uCallbackMessage = WM_APP + 1;
-    data.uVersion = 4;
-    data.hIcon = g_icon;
-    
-    strcpy(data.szTip, "Music Player");
-    
-    Shell_NotifyIconA(NIM_ADD, &data);
-    
-    g_tray_popup = CreatePopupMenu();
-    if (g_tray_popup) {
-        AppendMenuA(g_tray_popup, MF_STRING, 1, "Exit");
-    }
-}
-
-static void remove_tray_icon() {
-    NOTIFYICONDATAA data = {};
-    
-    data.cbSize = sizeof(data);
-    data.hWnd = g_hwnd;
-    data.uID = 1;
-    
-    Shell_NotifyIconA(NIM_DELETE, &data);
-    
-    if (g_tray_popup) {
-        DestroyMenu(g_tray_popup);
-    }
-}
 
 void set_window_title_message(const char *format, ...) {
     wchar_t title[512] = {};
@@ -855,8 +359,7 @@ void set_window_title_message(const char *format, ...) {
     vsnprintf(formatted_message, sizeof(formatted_message)-1, format, va);
     va_end(va);
     
-    _snwprintf(title, ARRAY_LENGTH(title)-1, L"ZNO MP " APP_VERSION_STRING "  |  %hs", formatted_message);
-    SetWindowTextW(g_hwnd, title);
+    platform_set_window_title(formatted_message);
 }
 
 //-
@@ -869,11 +372,9 @@ void tell_main_weve_dropped_the_drag_drop_payload() {
     g_drag_drop_done = true;
 }
 
-void add_to_file_drag_drop_payload(const wchar_t *path) {
-    char path_u8[PATH_LENGTH];
-    wchar_to_utf8(path, path_u8, PATH_LENGTH);
+void add_to_file_drag_drop_payload(const char *path) {
     g_drag_drop_payload.
-        offsets.append(g_drag_drop_payload.string_pool.append_array(path_u8, (u32)strlen(path_u8)+1));
+        offsets.append(g_drag_drop_payload.string_pool.append_array(path, (u32)strlen(path)+1));
 }
 
 void clear_file_drag_drop_payload() {
@@ -886,8 +387,5 @@ const File_Drag_Drop_Payload& get_file_drag_drop_payload() {
     return g_drag_drop_payload;
 }
 
-void screen_to_main_window_pos(POINT *point) {
-    ScreenToClient(g_hwnd, point);
-}
 //-
 

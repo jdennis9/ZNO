@@ -24,8 +24,21 @@ extern char PLATFORM_METADATA_PATH[PATH_LENGTH];
 extern char PLATFORM_PLAYLIST_PATH[PATH_LENGTH];
 extern char PLATFORM_PREFS_PATH[PATH_LENGTH];
 
-void platform_init();
+bool platform_init();
+void platform_deinit();
+void platform_init_imgui();
+void platform_show_window(bool show);
+void platform_resize_window(int width, int height);
+void platform_get_window_size(int *width, int *height);
 void platform_set_window_title(const char *title);
-void platform_poll_events();
+float platform_get_dpi_scale();
+// Returns false when a quit is requested
+bool platform_poll_events();
+void platform_notify(int message);
+void platform_apply_preferences();
+
+#ifdef _WIN32
+void platform_windows_show_hotkey_editor();
+#endif
 
 #endif
