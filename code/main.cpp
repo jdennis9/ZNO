@@ -41,6 +41,11 @@ struct Background {
     i32 width, height;
 };
 
+char MAIN_METADATA_PATH[PATH_LENGTH];
+char MAIN_IMGUI_INI_PATH[PATH_LENGTH];
+char MAIN_LAYOUTS_PATH[PATH_LENGTH];
+char MAIN_PREFS_PATH[PATH_LENGTH];
+
 static float g_dpi_scale;
 static bool g_obscured;
 static Background g_background;
@@ -71,8 +76,18 @@ int main(int argc, char *argv[])
     platform_init();
     playback_init();
 
+    if (!does_file_exist(PLATFORM_PLAYLIST_PATH))
+        create_directory(PLATFORM_PLAYLIST_PATH);
+    if (!does_file_exist(PLATFORM_DATA_PATH))
+        create_directory(PLATFORM_DATA_PATH);
+
+    snprintf(MAIN_METADATA_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "metadata.dat", PLATFORM_DATA_PATH);
+    snprintf(MAIN_IMGUI_INI_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "imgui.ini", PLATFORM_DATA_PATH);
+    snprintf(MAIN_LAYOUTS_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "layouts", PLATFORM_DATA_PATH);
+    snprintf(MAIN_PREFS_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "prefs.ini", PLATFORM_CONFIG_PATH);
+
     g_prefs.set_defaults();
-    g_prefs.load_from_file(PLATFORM_PREFS_PATH);
+    g_prefs.load_from_file(MAIN_PREFS_PATH);
 
     g_dpi_scale = platform_get_dpi_scale();
 
@@ -90,11 +105,12 @@ int main(int argc, char *argv[])
     ImGuiIO& imgui_io = ImGui::GetIO();
     imgui_io.ConfigFlags |=
         ImGuiConfigFlags_NavEnableKeyboard|ImGuiConfigFlags_DockingEnable;
+    imgui_io.IniFilename = MAIN_IMGUI_INI_PATH;
     //-
     
     //-
     // Load cached stuff. Needs to go before init_ui()
-    load_metadata_cache(PLATFORM_METADATA_PATH);
+    load_metadata_cache(MAIN_METADATA_PATH);
     //-
     
     // Initialize UI before showing the window to avoid
@@ -117,7 +133,7 @@ int main(int argc, char *argv[])
         running = platform_poll_events();
 
         if (g_prefs_dirty) {
-            g_prefs.save_to_file(PLATFORM_PREFS_PATH);
+            g_prefs.save_to_file(MAIN_PREFS_PATH);
         }
         
         // Load font and background if changed
@@ -152,8 +168,8 @@ int main(int argc, char *argv[])
         }
     }
     
-    g_prefs.save_to_file(PLATFORM_PREFS_PATH);
-    save_metadata_cache(PLATFORM_METADATA_PATH);
+    g_prefs.save_to_file(MAIN_PREFS_PATH);
+    save_metadata_cache(MAIN_METADATA_PATH);
     destroy_texture(&g_background.texture);
     platform_deinit();
     
@@ -337,10 +353,9 @@ void apply_preferences() {
     g_need_load_background = true;
     g_need_load_font = true;
     load_theme(prefs.theme);
-    g_prefs.save_to_file(PLATFORM_PREFS_PATH);
+    g_prefs.save_to_file(MAIN_PREFS_PATH);
     platform_apply_preferences();
 }
-
 
 void set_window_title_message(const char *format, ...) {
     char title[512] = {};

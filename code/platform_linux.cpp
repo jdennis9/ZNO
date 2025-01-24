@@ -24,11 +24,14 @@
 #include "ui.h"
 #include "playback.h"
 #include <GLFW/glfw3.h>
+#include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 
 char PLATFORM_METADATA_PATH[PATH_LENGTH];
 char PLATFORM_PLAYLIST_PATH[PATH_LENGTH];
-char PLATFORM_PREFS_PATH[PATH_LENGTH];
+char PLATFORM_CONFIG_PATH[PATH_LENGTH];
+char PLATFORM_DATA_PATH[PATH_LENGTH];
+char PLATFORM_IMGUI_INI_PATH[PATH_LENGTH];
 
 static GLFWwindow *g_window;
 static bool g_signals[NOTIFY__COUNT];
@@ -43,15 +46,14 @@ static void size_callback(GLFWwindow *window, int width, int height) {
 
 bool platform_init() {
 #ifndef NDEBUG
-    strncpy0(PLATFORM_METADATA_PATH, "../metadata.dat", PATH_LENGTH);
     strncpy0(PLATFORM_PLAYLIST_PATH, "../playlists", PATH_LENGTH);
-    strncpy0(PLATFORM_PREFS_PATH, "../prefs.ini", PATH_LENGTH);
+    strncpy0(PLATFORM_CONFIG_PATH, "..", PATH_LENGTH);
+    strncpy0(PLATFORM_DATA_PATH, "../data", PATH_LENGTH);
+    strncpy0(PLATFORM_METADATA_PATH, "../metadata.dat", PATH_LENGTH);
+    strncpy0(PLATFORM_IMGUI_INI_PATH, "../imgui.ini", PATH_LENGTH);
 #else
-    // Use XDG vars
+#error Unimplemented
 #endif
-
-    if (!does_file_exist(PLATFORM_PLAYLIST_PATH))
-        create_directory(PLATFORM_PLAYLIST_PATH);
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -65,6 +67,8 @@ bool platform_init() {
     glfwSetWindowSizeCallback(g_window, &size_callback);
     glfwSetWindowCloseCallback(g_window, &quit_callback);
 
+
+
     return true;
 }
 
@@ -75,6 +79,13 @@ void platform_deinit() {
 void platform_init_imgui() {
     ImGui_ImplGlfw_InitForOpenGL(g_window, true);
     video_init_imgui(g_window);
+
+    ImGuiIO& io = ImGui::GetIO();
+#ifndef NDEBUG
+    io.IniFilename = "../imgui.ini";
+#else
+#error Unimplemented
+#endif
 }
 
 void platform_show_window(bool show) {

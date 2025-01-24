@@ -3,9 +3,11 @@
 #include "os.h"
 #include "array.h"
 #include "filenames.h"
+#include "platform.h"
+#include "main.h"
 #include <imgui.h>
 
-#define LAYOUTS_PATH "Layouts"
+char LAYOUTS_PATH[PATH_LENGTH];
 
 struct Layout {
     char name[64];
@@ -25,7 +27,9 @@ static Layout g_builtin_layouts[] = {
 static Array<Custom_Layout> g_custom_layouts;
 
 void layout_init() {
-    if (!does_file_exist("imgui.ini")) {
+    snprintf(LAYOUTS_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "layouts", PLATFORM_DATA_PATH);
+
+    if (!does_file_exist(MAIN_IMGUI_INI_PATH)) {
         ImGui::LoadIniSettingsFromMemory(DEFAULT_LAYOUT_INI);
     }
 

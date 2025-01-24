@@ -2,9 +2,12 @@
 #include "os.h"
 #include "array.h"
 #include <sys/stat.h>
+#include <dirent.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
+#include <stdarg.h>
 #include <cwchar>
 
 struct Thread_Func_Data {
@@ -64,9 +67,16 @@ void thread_join(Thread thread) {
 void thread_destroy(Thread thread) {
 }
 
-void show_message_box(Message_Box_Type type, const char *format, ...) {}
-bool show_yes_no_dialog(const char *title, const char *format, ...) {return false;}
-bool show_confirm_dialog(const char *title, const char *format, ...) {return false;}
+void show_message_box(Message_Box_Type type, const char *format, ...) {
+}
+
+bool show_yes_no_dialog(const char *title, const char *format, ...) {
+    return false;
+}
+
+bool show_confirm_dialog(const char *title, const char *format, ...) {
+    return false;
+}
 
 bool does_file_exist(const char *path) {
     struct stat st;
@@ -80,13 +90,32 @@ bool open_file_select_dialog(File_Type file_type, char *buffer, int buffer_size)
     return pclose(fp) == 0 && buffer[0] != 0;
 }
 
-bool open_file_save_dialog(File_Type file_type, char *buffer, int buffer_size) {return false;}
-bool open_folder_select_dialog(File_Type file_type, char *buffer, int buffer_size) {return false;}
+bool open_file_save_dialog(File_Type file_type, char *buffer, int buffer_size) {
+    FILE *fp = popen("zenity --file-selection --save", "r");
+    memset(buffer, 0, buffer_size);
+    fgets(buffer, buffer_size, fp);
+    return pclose(fp) == 0 && buffer[0] != 0;
+}
+bool open_folder_select_dialog(File_Type file_type, char *buffer, int buffer_size) {
+    FILE *fp = popen("zenity --file-selection --directory", "r");
+    memset(buffer, 0, buffer_size);
+    fgets(buffer, buffer_size, fp);
+    return pclose(fp) == 0 && buffer[0] != 0;
+}
 
-bool open_file_multiselect_dialog(File_Type file_type, File_Iterator_Fn *iterator, void *iterator_data) {
+static bool open_file_or_folder_multiselect_dialog(File_Type file_type, File_Iterator_Fn *iterator, void *iterator_data, bool select_folders) {
     Array<char> result = {};
     const char *file;
-    FILE *fp = popen("zenity --file-selection --multiple", "r");
+    FILE *fp;
+    
+    if (select_folders)
+        fp = popen("zenity --file-selection --multiple --directory", "r");
+    else
+        fp = popen("zenity --file-selection --multiple", "r");
+    
+    if (!fp) return false;
+
+    defer(result.free());
 
     while (!feof(fp)) {
         result.append(fgetc(fp));
@@ -107,8 +136,36 @@ bool open_file_multiselect_dialog(File_Type file_type, File_Iterator_Fn *iterato
     return true;
 }
 
-bool open_folder_multiselect_dialog(File_Type file_type, File_Iterator_Fn *iterator, void *iterator_data) {return false;}
-bool for_each_file_in_folder(const char *path, File_Iterator_Fn *iterator, void *iterator_data) {return false;}
+bool open_file_multiselect_dialog(File_Type file_type, File_Iterator_Fn *iterator, void *iterator_data) {
+    return open_file_or_folder_multiselect_dialog(file_type, iterator, iterator_data, false);
+}
+
+bool open_folder_multiselect_dialog(File_Type file_type, File_Iterator_Fn *iterator, void *iterator_data) {
+    return open_file_or_folder_multiselect_dialog(file_type, iterator, iterator_data, true);
+}
+
+bool for_each_file_in_folder(const char *path, File_Iterator_Fn *iterator, void *iterator_data) {
+    DIR *dir;
+    dirent *dent;
+
+    dir = opendir(path);
+    if (!dir) return false;
+
+    while ((dent = readdir(dir))) {
+        char path_buffer[PATH_LENGTH] = {};
+        snprintf(path_buffer, PATH_LENGTH-1, "%s/%s", path, dent->d_name);
+        switch (dent->d_type) {
+            case DT_DIR:
+            case DT_LNK:
+            case DT_REG:
+            iterator(iterator_data, path_buffer, dent->d_type == DT_DIR);
+            break;
+        }
+    }
+
+    return true;
+}
+
 bool create_directory(const char *path) {
     return mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == 0;
 }

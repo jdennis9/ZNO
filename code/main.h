@@ -26,6 +26,11 @@
 
 #define APP_VERSION_STRING "0.5.2"
 
+extern char MAIN_METADATA_PATH[PATH_LENGTH];
+extern char MAIN_IMGUI_INI_PATH[PATH_LENGTH];
+extern char MAIN_LAYOUTS_PATH[PATH_LENGTH];
+extern char MAIN_PREFS_PATH[PATH_LENGTH];
+
 // Functions for communicating with main
 
 enum {

@@ -82,4 +82,5 @@ deps = [
     dependency('samplerate'),
 ]
 
-zno = executable('zno', src, include_directories : includes, dependencies : deps)
+zno = executable('zno', src, include_directories : includes, dependencies : deps, install : true,
+    install_dir : 'bin')

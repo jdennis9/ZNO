@@ -40,22 +40,15 @@
 #define stat _stat
 #endif
 
-#define PLAYLIST_DIRECTORY "Playlists"
-#define DATA_DIRECTORY "Data"
-#define LIBRARY_PATH DATA_DIRECTORY "\\Library.txt"
-#define QUEUE_PATH DATA_DIRECTORY "\\Queue.txt"
-#define STATE_PATH DATA_DIRECTORY "\\State.ini"
-
-static const char *REQUIRED_DIRECTORIES[] = {
-    PLAYLIST_DIRECTORY,
-    DATA_DIRECTORY,
-};
-
 #define SHUFFLE_ICON "\xef\x81\xb4"
 #define PREV_TRACK_ICON "\xef\x81\x88"
 #define NEXT_TRACK_ICON "\xef\x81\x91"
 #define PLAY_ICON "\xef\x81\x8b"
 #define PAUSE_ICON "\xef\x81\x8c"
+
+char STATE_PATH[PATH_LENGTH];
+char LIBRARY_PATH[PATH_LENGTH];
+char QUEUE_PATH[PATH_LENGTH];
 
 typedef void Window_Show_Fn();
 
@@ -647,7 +640,7 @@ static void show_user_playlists() {
                     new_playlist.sort();
                 }
                 
-                generate_temporary_file_name(PLAYLIST_DIRECTORY, save_path, sizeof(save_path));
+                generate_temporary_file_name(PLATFORM_PLAYLIST_PATH, save_path, sizeof(save_path));
                 save_playlist_to_file(new_playlist, save_path);
                 
                 ui.user_playlists.append(new_playlist);
@@ -1366,13 +1359,11 @@ void show_ui() {
 
 void init_ui() {
     START_TIMER(init_ui, "Initialize UI");
-    for (const char *d : REQUIRED_DIRECTORIES) {
-        if (!does_file_exist(d)) {
-            create_directory(d);
-        }
-    }
-    
     register_imgui_settings_handler();
+
+    snprintf(STATE_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "state.ini", PLATFORM_DATA_PATH);
+    snprintf(LIBRARY_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "library.txt", PLATFORM_DATA_PATH);
+    snprintf(QUEUE_PATH, PATH_LENGTH-1, "%s" PATH_SEP_STR "queue.txt", PLATFORM_DATA_PATH);
     
     // Load playlists from Playlists folder
     {
@@ -1391,7 +1382,7 @@ void init_ui() {
         };
         
         START_TIMER(load_playlists, "Load playlists");
-        for_each_file_in_folder(PLAYLIST_DIRECTORY, load_playlist_iterator, NULL);
+        for_each_file_in_folder(PLATFORM_PLAYLIST_PATH, load_playlist_iterator, NULL);
         STOP_TIMER(load_playlists);
     }
     

@@ -20,9 +20,17 @@
 
 #include "defines.h"
 
-extern char PLATFORM_METADATA_PATH[PATH_LENGTH];
+#ifdef _WIN32
+#define PATH_SEP '\\'
+#define PATH_SEP_STR "\\"
+#else
+#define PATH_SEP '/'
+#define PATH_SEP_STR "/"
+#endif
+
 extern char PLATFORM_PLAYLIST_PATH[PATH_LENGTH];
-extern char PLATFORM_PREFS_PATH[PATH_LENGTH];
+extern char PLATFORM_CONFIG_PATH[PATH_LENGTH];
+extern char PLATFORM_DATA_PATH[PATH_LENGTH];
 
 bool platform_init();
 void platform_deinit();

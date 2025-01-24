@@ -61,9 +61,9 @@ struct Window {
     bool is_obscured;
 };
 
-char PLATFORM_METADATA_PATH[PATH_LENGTH];
 char PLATFORM_PLAYLIST_PATH[PATH_LENGTH];
-char PLATFORM_PREFS_PATH[PATH_LENGTH];
+char PLATFORM_CONFIG_PATH[PATH_LENGTH];
+char PLATFORM_DATA_PATH[PATH_LENGTH];
 
 static HWND g_hwnd;
 static Window g_window;
@@ -128,9 +128,9 @@ bool platform_init() {
     (void)CoInitializeEx(NULL, COINIT_MULTITHREADED);
     setlocale(LC_ALL, ".65001");
 
-	strncpy0(PLATFORM_METADATA_PATH, "metadata.dat", PATH_LENGTH);
-	strncpy0(PLATFORM_PREFS_PATH, "Preferences.ini", PATH_LENGTH);
-	strncpy0(PLATFORM_PLAYLIST_PATH, "Playlists", PATH_LENGTH);
+	strncpy0(PLATFORM_CONFIG_PATH, ".", PATH_LENGTH);
+	strncpy0(PLATFORM_PLAYLIST_PATH, "playlists", PATH_LENGTH);
+    strncpy0(PLATFORM_DATA_PATH, "data", PATH_LENGTH);
 
     g_icon = LoadIconA(hinstance, "WindowIcon");
 
