@@ -51,9 +51,9 @@ static const char *REQUIRED_DIRECTORIES[] = {
     DATA_DIRECTORY,
 };
 
-#define SHUFFLE_ICON "\uf074"
-#define PREV_TRACK_ICON "\xef\x81\x8a"
-#define NEXT_TRACK_ICON "\xef\x81\x8e"
+#define SHUFFLE_ICON "\xef\x81\xb4"
+#define PREV_TRACK_ICON "\xef\x81\x88"
+#define NEXT_TRACK_ICON "\xef\x81\x91"
 #define PLAY_ICON "\xef\x81\x8b"
 #define PAUSE_ICON "\xef\x81\x8c"
 

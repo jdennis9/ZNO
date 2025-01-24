@@ -17,7 +17,10 @@
 */
 #include <imgui.h>
 #include <math.h>
-//#include <kissfft/kiss_fftr.h>
+// @TODO: Use fftw over kissfft
+#ifdef _WIN32
+#include <kissfft/kiss_fftr.h>
+#endif
 #include <atomic>
 #include "playback_analysis.h"
 #include "playback.h"
