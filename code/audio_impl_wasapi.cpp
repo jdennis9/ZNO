@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#ifdef _WIN32
 #include "audio.h"
 #include <windows.h>
 #include <mmdeviceapi.h>
@@ -179,5 +180,5 @@ bool open_wasapi_audio_stream(Fill_Audio_Buffer_Callback *callback, void *callba
     
     return true;
 }
-    
+#endif
     

@@ -500,7 +500,7 @@ static bool read_line(char **memory, char *buffer, int buffer_size) {
     
     while (*p && isspace(*p)) ++p;
     
-    for (; *p && !iscontrol(*p) && (i < (buffer_size-1)); ++p, ++i) {
+    for (; *p && !iscontrol(*p) && *p != '\n' && (i < (buffer_size-1)); ++p, ++i) {
         buffer[i] = *p;
     }
     

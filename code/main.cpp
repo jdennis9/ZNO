@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 
     bool running = true;
     while (running) {
-        platform_poll_events();
+        running = platform_poll_events();
 
         if (g_prefs_dirty) {
             g_prefs.save_to_file(PLATFORM_PREFS_PATH);

@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#ifdef _WIN32
 #include <fileref.h>
 #include "taglib_file_name_workaround.h"
 
@@ -23,4 +24,4 @@
 TagLib_File *taglib_file_new_wchar_(const wchar_t *filename) {
     return reinterpret_cast<TagLib_File*>(new TagLib::FileRef(filename));
 }
-
+#endif

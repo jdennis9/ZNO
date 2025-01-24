@@ -60,17 +60,17 @@ static inline const char *get_file_extension(const char *path) {
     return path;
 }
 
-static const char *get_file_name(const char *path) {
+static inline const char *get_file_name(const char *path) {
     i64 length = strlen(path);
     
     for (i64 i = length - 1; i >= 0; --i) {
-        if (path[i] == '\\') return &path[i + 1];
+        if (path[i] == '\\' || path[i] == '/') return &path[i + 1];
     }
     
     return path;
 }
 
-static u32 get_file_name_length_without_extension(const char *path) {
+static inline u32 get_file_name_length_without_extension(const char *path) {
     const char *filename = get_file_name(path);
     const char *extension = get_file_extension(path);
     

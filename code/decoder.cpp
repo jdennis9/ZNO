@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "decoder.h"
+#include <math.h>
 
 bool decoder_open(Decoder *dec, const char *filename) {
     decoder_close(dec);

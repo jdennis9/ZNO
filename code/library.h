@@ -28,7 +28,7 @@ struct Path_Pool;
 
 // Guess from file extension whether a file is supported
 // @NOTE: This needs to be maintained within platform.cpp (AUDIO_FILE_TYPES)
-static bool is_supported_file(const char *path) {
+static inline bool is_supported_file(const char *path) {
     const char *extension = strrchr((char*)path, '.');
     if (!extension) return false;
 

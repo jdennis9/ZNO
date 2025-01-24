@@ -36,6 +36,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifdef _WIN32
+#define stat _stat
+#endif
+
 #define PLAYLIST_DIRECTORY "Playlists"
 #define DATA_DIRECTORY "Data"
 #define LIBRARY_PATH DATA_DIRECTORY "\\Library.txt"
@@ -550,7 +554,7 @@ static void show_metadata_editor() {
     }
 }
 
-static void load_theme_from_file(const wchar_t *path) {
+static void load_theme_from_file(const char *path) {
     auto callback =
     [](void *dont_care, const char *section, const char *key, const char *value) -> int {
         ImGuiStyle& style = ImGui::GetStyle();
@@ -563,7 +567,7 @@ static void load_theme_from_file(const wchar_t *path) {
         return 1;
     };
     
-    FILE *file = _wfopen(path, L"r");
+    FILE *file = fopen(path, "r");
     if (!file) return;
     ini_parse_file(file, callback, NULL);
     fclose(file);
@@ -1438,6 +1442,7 @@ void init_ui() {
     set_default_theme();
     
     // Load mini font
+    #ifdef _WIN32
     {
         f32 scaled_size = platform_get_dpi_scale() * 9.f;
         ImFontConfig cfg = ImFontConfig();
@@ -1464,7 +1469,7 @@ void init_ui() {
         ui.mini_font_atlas.SetTexID((ImTextureID)texture);
         ui.mini_font_atlas.ClearTexData();
     }
-    
+    #endif
     ui.ready = true;
     STOP_TIMER(init_ui);
 }
@@ -1659,7 +1664,7 @@ static void show_file_info() {
     static Track info_track;
     static struct {
         char path[PATH_LENGTH];
-        struct _stat st;
+        struct stat st;
         Playback_File_Info audio;
     } info;
 
@@ -1667,7 +1672,7 @@ static void show_file_info() {
         info_track = ui.current_track;
         if (info_track) {
             library_get_track_path(info_track, info.path);
-            _stat(info.path, &info.st);
+            stat(info.path, &info.st);
             playback_get_file_info(&info.audio);
         }
     }
@@ -1873,9 +1878,7 @@ void clear_track_selection() {
 void load_ui_theme(const char *path) {
     ImGui::StyleColorsDark();
     if (path && path[0]) {
-        wchar_t wpath[PATH_LENGTH];
-        utf8_to_wchar(path, wpath, PATH_LENGTH);
-        load_theme_from_file(wpath);
+        load_theme_from_file(path);
     }
 }
 
@@ -1977,7 +1980,7 @@ static int async_file_scan_thread_func(void *target_ptr) {
     return 0;
 }
 
-static void begin_add_tracks_async_scan(Playlist *target) {
+void begin_add_tracks_async_scan(Playlist *target) {
     ASSERT(ui.track_scan_progress.done == false);
     ui.track_scan_progress.total_track_count = 0;
     ui.track_scan_progress.tracks_loaded = 0;

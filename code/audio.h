@@ -50,6 +50,9 @@ struct Audio_Stream {
 // audio_impl_wasapi.cpp
 bool open_wasapi_audio_stream(Fill_Audio_Buffer_Callback *callback, void *callback_data, Audio_Stream *stream);
 
+// audio_impl_portaudio.cpp
+bool open_portaudio_audio_stream(Fill_Audio_Buffer_Callback *callback, void *callback_data, Audio_Stream *stream);
+
 static inline void interrupt_audio_stream(Audio_Stream *stream) {
     if (stream->interrupt_fn) stream->interrupt_fn(stream->data);
 }

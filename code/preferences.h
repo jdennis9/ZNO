@@ -62,7 +62,9 @@ struct Preferences {
     static constexpr int WAVEFORM_WINDOW_SIZE_MAX = 100;
     
     void set_defaults() {
+#ifdef _WIN32
         strcpy(font, "C:\\Windows\\Fonts\\seguisb.ttf");
+#endif
         font_size = 16;
         icon_font_size = 12;
         waveform_window_size = 40;

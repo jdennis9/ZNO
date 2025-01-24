@@ -23,6 +23,7 @@
 
 typedef int Compare_Fn(const void*, const void*);
 
+#ifdef _WIN32
 static inline int strcasecmp(const char *a, const char *b) {
     int ca, cb;
     do {
@@ -36,6 +37,7 @@ static inline int strcasecmp(const char *a, const char *b) {
     
     return ca - cb;
 }
+#endif
 
 static int compare_titles_descending(const void *p_a, const void *p_b) {
     Track a = *(Track*)p_a;

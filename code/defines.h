@@ -28,8 +28,12 @@
 #include <assert.h>
 #include <string.h>
 
+#ifdef _WIN32
 #define INLINE __forceinline
-#define ASSERT assert
+#else
+#define INLINE __attribute__((always_inline)) inline
+#endif
+
 #define PATH_LENGTH 384
 #define MAX_AUDIO_CHANNELS 8
 
@@ -47,18 +51,18 @@ typedef double f64;
 
 // Logging
 #ifndef NDEBUG
-#define log_debug(...) printf("debug: "); printf_s(__VA_ARGS__)
-#define wlog_debug(...) printf("debug: "); wprintf_s(__VA_ARGS__)
+#define log_debug(...) printf("debug: "); printf(__VA_ARGS__)
+#define wlog_debug(...) printf("debug: "); wprintf(__VA_ARGS__)
 #else
 #define log_debug(...)
 #define wlog_debug(...)
 #endif
-#define log_error(...) printf("error: "); printf_s(__VA_ARGS__)
-#define log_warning(...) printf("warning: "); printf_s(__VA_ARGS__)
-#define log_info(...) printf("info: "); printf_s(__VA_ARGS__)
-#define wlog_error(...) printf("error: "); wprintf_s(__VA_ARGS__)
-#define wlog_warning(...) printf("warning: "); wprintf_s(__VA_ARGS__)
-#define wlog_info(...) printf("info: "); wprintf_s(__VA_ARGS__)
+#define log_error(...) printf("error: "); printf(__VA_ARGS__)
+#define log_warning(...) printf("warning: "); printf(__VA_ARGS__)
+#define log_info(...) printf("info: "); printf(__VA_ARGS__)
+#define wlog_error(...) printf("error: "); wprintf(__VA_ARGS__)
+#define wlog_warning(...) printf("warning: "); wprintf(__VA_ARGS__)
+#define wlog_info(...) printf("info: "); wprintf(__VA_ARGS__)
 
 // Helpers
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
@@ -67,6 +71,13 @@ typedef double f64;
 #define hash_wstring(string) XXH32(string, wcslen(string)*sizeof(wchar_t), 0)
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+// assert but it always expands the expression
+#ifndef NDEBUG
+#define ASSERT(expr) assert(expr)
+#else
+#define ASSERT(expr) expr
+#endif
 
 // Constants
 #define PI 3.14159265359f
@@ -142,11 +153,15 @@ static INLINE void strncpy0(wchar_t *dst, const wchar_t *src, int n) {
     dst[n-1] = 0;
 }
 
-static int format_time(i64 ts, char *buffer, int buffer_size) {
+static inline int format_time(i64 ts, char *buffer, int buffer_size) {
     i64 hours = ts / 3600;
     i64 minutes = (ts / 60) - (hours * 60);
     i64 seconds = ts - (hours * 3600) - (minutes * 60);
+#ifdef _WIN32
     return snprintf(buffer, buffer_size, "%02lld:%02lld:%02lld", hours, minutes, seconds);
+#else
+    return snprintf(buffer, buffer_size, "%02ld:%02ld:%02ld", hours, minutes, seconds);
+#endif
 }
 
 // platform.cpp

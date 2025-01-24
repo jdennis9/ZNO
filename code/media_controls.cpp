@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#ifdef _WIN32
 #pragma comment(lib, "windowsapp")
 #include <winrt/Windows.Media.Core.h>
 #include <winrt/Windows.Media.Playback.h>
@@ -93,3 +94,4 @@ void install_media_controls_handler() {
 
     g_smtc.ButtonPressed(&handle_button_pressed);
 }
+#endif

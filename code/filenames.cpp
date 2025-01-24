@@ -83,6 +83,7 @@ Path_Index store_file_path(Path_Pool& pool, const wchar_t *path) {
 void retrieve_file_path(const Path_Pool& pool, Path_Index index, char *buffer, u32 buffer_size) {
     File_Entry file = pool.files[index];
     Folder_Entry folder = pool.folders[file.folder_index];
+    memset(buffer, 0, buffer_size);
     snprintf(buffer, buffer_size, "%s%s", &pool.string_pool[folder.name], &pool.string_pool[file.name]);
 }
 

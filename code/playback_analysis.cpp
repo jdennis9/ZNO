@@ -17,7 +17,7 @@
 */
 #include <imgui.h>
 #include <math.h>
-#include <kissfft/kiss_fftr.h>
+//#include <kissfft/kiss_fftr.h>
 #include <atomic>
 #include "playback_analysis.h"
 #include "playback.h"
@@ -137,6 +137,8 @@ void calc_frame_peak(Playback_Buffer_View *view, f32 *out) {
 }
 
 static void calc_spectrum(Playback_Buffer_View *view, Spectrum *sg) {
+    // @FixForLinux
+#ifdef _WIN32
     static kiss_fftr_cfg cfg = NULL;
     static u32 cfg_frame_count = 0;
     if (!cfg) {
@@ -182,6 +184,7 @@ static void calc_spectrum(Playback_Buffer_View *view, Spectrum *sg) {
     for (int i = 0; i < SG_BAND_COUNT; ++i) {
         sg->peaks[i] /= 2.6f;
     }
+#endif
 }
 
 static int fill_waveform_preview(void *dont_care) {

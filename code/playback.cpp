@@ -181,7 +181,11 @@ void audio_stream_callback(void *user_data, f32 *output_buffer, const Audio_Buff
 
 void playback_init() {
     g_lock = create_mutex();
+#ifdef _WIN32
     open_wasapi_audio_stream(&audio_stream_callback, &g_decoder, &g_stream);
+#else
+    open_portaudio_audio_stream(&audio_stream_callback, &g_decoder, &g_stream);
+#endif
 }
 
 void playback_unload_file() {

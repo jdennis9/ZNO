@@ -49,7 +49,7 @@ Metadata_Index read_file_metadata(const char *path) {
     utf8_to_wchar(path, path_win, PATH_LENGTH);
     file = taglib_file_new_wchar_(path_win);
 #else
-    file = tablib_file_new(path);
+    file = taglib_file_new(path);
 #endif
     
     if (file) {
@@ -102,7 +102,7 @@ bool update_file_metadata(Metadata_Index index, const char *path, Detailed_Metad
     utf8_to_wchar(path, path_win, PATH_LENGTH);
     file = taglib_file_new_wchar_(path_win);
 #else
-    file = tablib_file_new(path);
+    file = taglib_file_new(path);
 #endif
     Metadata *old_md = &g_metadata[index];
     if (!file) return false;
@@ -134,7 +134,7 @@ bool read_detailed_file_metadata(const char *path, Detailed_Metadata *md, Image 
     utf8_to_wchar(path, path_win, PATH_LENGTH);
     file = taglib_file_new_wchar_(path_win);
 #else
-    file = tablib_file_new(path);
+    file = taglib_file_new(path);
 #endif
     
     if (cover) cover->data = NULL;

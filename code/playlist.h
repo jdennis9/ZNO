@@ -86,7 +86,7 @@ struct Playlist;
 void sort_playlist(Playlist& playlist, int metric, int order = SORT_ORDER_ASCENDING);
 void sort_playlist_array(Array<Playlist>& playlists, int metric, int order = SORT_ORDER_ASCENDING);
 
-static void shuffle_tracks(Array<Track>& tracks) {
+static inline void shuffle_tracks(Array<Track>& tracks) {
     u32 count = tracks.count;
     for (u32 i = 0; i < count; ++i) {
         u32 s = rand() % count;
@@ -165,7 +165,7 @@ struct Playlist {
     }
 };
 
-static bool metadata_meets_filter(const Metadata& md, const char *filter) {
+static inline bool metadata_meets_filter(const Metadata& md, const char *filter) {
     if (md.title[0] && string_contains_string_ignoring_case(md.title, filter))
         return true;
     if (md.artist[0] && string_contains_string_ignoring_case(md.artist, filter))
@@ -176,7 +176,7 @@ static bool metadata_meets_filter(const Metadata& md, const char *filter) {
     return false;
 }
 
-static bool track_meets_filter(const Track& track, const char *filter) {
+static inline bool track_meets_filter(const Track& track, const char *filter) {
     Metadata md;
     library_get_track_metadata(track, &md);
     return metadata_meets_filter(md, filter);

@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#ifdef _WIN32
 #include "os.h"
 #include <windows.h>
 #include <shlwapi.h>
@@ -465,5 +466,5 @@ u64 read_whole_file(const char *path, void **buffer, bool null_terminate) {
     
     return size;
 }
-    
+#endif
     
