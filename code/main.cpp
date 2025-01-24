@@ -17,10 +17,11 @@
 */
 #include "defines.h"
 #include "os.h"
+#include "drag_drop.h"
+#include "platform.h"
 #include "playback.h"
 #include "ui.h"
 #include "main.h"
-#define VIDEO_IMPL
 #include "video.h"
 #include "theme.h"
 #include "font_awesome.h"
@@ -33,11 +34,6 @@
 #include <locale.h>
 #include <imgui.h>
 #include <stb_image.h>
-
-#include "drag_drop.h"
-
-#define WINDOW_CLASS_NAME L"ZNO_WINDOW_CLASS"
-#define WINDOW_TITLE (L"ZNO MP " APP_VERSION_STRING)
 
 struct Main_Flags {
     bool reload_font;
