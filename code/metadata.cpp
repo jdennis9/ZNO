@@ -188,11 +188,6 @@ static void write_u32(FILE *f, u32 value) {
     fwrite(&value, 4, 1, f);
 }
 
-static void read_u32(FILE *f, u32 *value) {
-    if (value) fread(value, 4, 1, f);
-    fseek(f, 4, SEEK_CUR);
-}
-
 static inline u32 mread_u32(void **memory) {
     u32 value;
     memcpy(&value, *memory, 4);

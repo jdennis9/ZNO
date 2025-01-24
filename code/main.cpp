@@ -35,10 +35,6 @@
 #include <imgui.h>
 #include <stb_image.h>
 
-struct Main_Flags {
-    bool reload_font;
-};
-
 struct Background {
     char path[512];
     Texture *texture;
@@ -47,7 +43,6 @@ struct Background {
 
 static float g_dpi_scale;
 static bool g_obscured;
-static Main_Flags g_flags;
 static Background g_background;
 static Preferences g_prefs;
 static bool g_prefs_dirty;
@@ -348,14 +343,15 @@ void apply_preferences() {
 
 
 void set_window_title_message(const char *format, ...) {
-    wchar_t title[512] = {};
-    char formatted_message[512];
+    char title[512] = {};
+    char formatted_message[384];
     va_list va;
     va_start(va, format);
     vsnprintf(formatted_message, sizeof(formatted_message)-1, format, va);
     va_end(va);
-    
-    platform_set_window_title(formatted_message);
+
+    snprintf(title, sizeof(title)-1, "ZNO MP " APP_VERSION_STRING " | %s", formatted_message);
+    platform_set_window_title(title);
 }
 
 //-

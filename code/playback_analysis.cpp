@@ -114,7 +114,7 @@ f32 get_playback_peak() {
     f32 sum = 0.f;
     i32 channels = g_buffer.channels;
 
-    for (u32 i = 0; i < channels; ++i) {
+    for (i32 i = 0; i < channels; ++i) {
         sum += g_metrics.peak[i];
     }
 
@@ -204,9 +204,6 @@ static int fill_waveform_preview(void *dont_care) {
     const f32 *input = buffer.data;
 
     while (decoder_decode(dec, buffer.data, segment_size, channels, samplerate) == DECODE_STATUS_COMPLETE) {
-        f32 sum = 0.f;
-        i32 peak_count = 0;
-
         f32 peak = 0.f;
 
         for (int i = 0; i < segment_size; ++i) {
@@ -255,7 +252,7 @@ void show_spectrum_ui() {
     f32 max_bar_height = region.y - line_height;
     for (u32 band = 0; band < SG_BAND_COUNT; ++band) {
         f32 peak = sg.peaks[band];
-        char freq_text[8] = {};
+        char freq_text[7] = {};
         int freq = SG_BAND_OFFSETS[band+1];
         f32 y_offset = cursor.y + region.y - line_height;
 
@@ -284,7 +281,7 @@ void show_channel_peaks_ui() {
     const f32 *peaks = g_metrics.peak;
 
     f32 max_bar_height = region.y;
-    for (u32 ch = 0; ch < g_buffer.channels; ++ch) {
+    for (i32 ch = 0; ch < g_buffer.channels; ++ch) {
         f32 peak = peaks[ch];
         f32 y_offset = cursor.y + region.y;
 
