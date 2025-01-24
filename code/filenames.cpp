@@ -47,7 +47,6 @@ Path_Index store_file_path(Path_Pool& pool, const char *full_path) {
     const char *filename = get_file_name(full_path);
     ptrdiff_t base_path_length = filename - full_path;
     ASSERT(base_path_length >= 0);
-    u32 filename_length = (u32)strlen(filename);
     u32 folder_hash = XXH32(full_path, base_path_length, 0);
     i32 folder_index = -1;
     

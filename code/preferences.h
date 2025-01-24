@@ -37,7 +37,7 @@ enum {
     MENU_BAR_VISUAL__COUNT,
 };
 
-static const char *close_policy_to_string(int p) {
+static inline const char *close_policy_to_string(int p) {
     switch (p) {
         case CLOSE_POLICY_ALWAYS_ASK: return "Always ask";
         case CLOSE_POLICY_MINIMIZE_TO_TRAY: return "Minimize to tray";

@@ -91,7 +91,6 @@ bool circle_handle_slider(const char *str_id, float *p_value, float min, float m
     ImGuiID id = ImGui::GetID(str_id);
     bool active = id == ImGui::GetActiveID();
     ImGuiStyle& style = ImGui::GetStyle();
-    ImVec2 text_size = ImGui::CalcTextSize(str_id);
     
     if (size.x <= 0.f) size.x = available_size.x - style.WindowPadding.x;
     if (size.y <= 0.f) size.y = available_size.y - style.WindowPadding.y;
@@ -192,11 +191,6 @@ void peak_meter_widget(const char *str_id, ImVec2 size) {
         };
 
         ImVec2 max = {
-            min.x + size.x*peak,
-            min.y + bar_height,
-        };
-
-        ImVec2 mid_max = {
             min.x + size.x*peak,
             min.y + bar_height,
         };

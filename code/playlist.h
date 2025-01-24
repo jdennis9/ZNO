@@ -163,6 +163,8 @@ struct Playlist {
         if (index >= count) return index - ((index/count)*count);
         return index;
     }
+
+    ~Playlist() {}
 };
 
 static inline bool metadata_meets_filter(const Metadata& md, const char *filter) {

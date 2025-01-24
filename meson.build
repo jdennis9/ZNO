@@ -1,4 +1,4 @@
-project('zno', ['cpp', 'c'])
+project('zno', ['cpp', 'c'], default_options : ['c_std=c11', 'cpp_std=c++11'])
 
 src = [
     'code/about.cpp',

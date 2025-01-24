@@ -188,31 +188,15 @@ static void write_u32(FILE *f, u32 value) {
     fwrite(&value, 4, 1, f);
 }
 
-static void write_u64(FILE *f, u64 value) {
-    fwrite(&value, 8, 1, f);
-}
-
 static void read_u32(FILE *f, u32 *value) {
     if (value) fread(value, 4, 1, f);
     fseek(f, 4, SEEK_CUR);
-}
-
-static void read_u64(FILE *f, u64 *value) {
-    if (value) fread(value, 8, 1, f);
-    fseek(f, 8, SEEK_CUR);
 }
 
 static inline u32 mread_u32(void **memory) {
     u32 value;
     memcpy(&value, *memory, 4);
     *memory = (u8*)*memory + 4;
-    return value;
-}
-
-static inline u64 mread_u64(void **memory) {
-    u64 value;
-    memcpy(&value, *memory, 8);
-    *memory = (u8*)*memory + 8;
     return value;
 }
 
@@ -262,8 +246,11 @@ void load_metadata_cache(const char *path) {
     fread(data, size, 1, f);
     
     u32 magic = mread_u32(&data);
-    u32 version = mread_u32(&data);
-    u32 flags = mread_u32(&data);
+
+    if (magic != METADATA_CACHE_MAGIC) return;
+
+    /*u32 version =*/ mread_u32(&data);
+    /*u32 flags =*/ mread_u32(&data);
     u32 file_count = mread_u32(&data);
     
     // 16 byte header + 20 bytes per track

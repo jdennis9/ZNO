@@ -57,12 +57,12 @@ typedef double f64;
 #define log_debug(...)
 #define wlog_debug(...)
 #endif
-#define log_error(...) printf("error: "); printf(__VA_ARGS__)
-#define log_warning(...) printf("warning: "); printf(__VA_ARGS__)
-#define log_info(...) printf("info: "); printf(__VA_ARGS__)
-#define wlog_error(...) printf("error: "); wprintf(__VA_ARGS__)
-#define wlog_warning(...) printf("warning: "); wprintf(__VA_ARGS__)
-#define wlog_info(...) printf("info: "); wprintf(__VA_ARGS__)
+#define log_error(...) printf("error: "), printf(__VA_ARGS__)
+#define log_warning(...) printf("warning: "), printf(__VA_ARGS__)
+#define log_info(...) printf("info: "), printf(__VA_ARGS__)
+#define wlog_error(...) printf("error: "), wprintf(__VA_ARGS__)
+#define wlog_warning(...) printf("warning: "), wprintf(__VA_ARGS__)
+#define wlog_info(...) printf("info: "), wprintf(__VA_ARGS__)
 
 // Helpers
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))

@@ -51,11 +51,11 @@ static const char *REQUIRED_DIRECTORIES[] = {
     DATA_DIRECTORY,
 };
 
-static const char *SHUFFLE_ICON = u8"\xf074";
-static const char *PREV_TRACK_ICON = u8"\xf048";
-static const char *NEXT_TRACK_ICON = u8"\xf051";
-static const char *PLAY_ICON = u8"\xf04b";
-static const char *PAUSE_ICON = u8"\xf04c";
+#define SHUFFLE_ICON "\uf074"
+#define PREV_TRACK_ICON "\xef\x81\x8a"
+#define NEXT_TRACK_ICON "\xef\x81\x8e"
+#define PLAY_ICON "\xef\x81\x8b"
+#define PAUSE_ICON "\xef\x81\x8c"
 
 typedef void Window_Show_Fn();
 
@@ -754,9 +754,7 @@ static void show_user_playlists() {
         
         if (commit) {
             status_line = validate_playlist_name(rename_playlist_name);
-            if (!status_line){
-                bool is_playing = playlist->get_id() == ui.current_playlist_id;
-                
+            if (!status_line) {
                 playlist->set_name(rename_playlist_name);
                 
                 ui.current_playlist_id = playlist->get_id();

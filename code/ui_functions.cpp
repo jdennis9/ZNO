@@ -144,7 +144,6 @@ const static Track_List_Column TRACK_COLUMNS[] = {
 
 static void show_track_range(Playlist& playlist, u32 start, 
                              u32 end_exclusive, Track current_track, Track_List_Action *action, bool no_edit, bool scroll_to_current) {
-    u32 playlist_id = playlist.get_id();
     bool want_remove = false;
     Metadata metadata;
             
@@ -286,7 +285,6 @@ void show_playlist_track_list(const char *str_id, Playlist& playlist, Track curr
     const bool no_sort = (flags & TRACK_LIST_FLAGS_NO_SORT) != 0;
     if (!no_sort) table_flags |= ImGuiTableFlags_Sortable|ImGuiTableFlags_SortTristate;
     
-    const ImGuiStyle& style = ImGui::GetStyle();
     const bool no_edit = (flags & TRACK_LIST_FLAGS_NO_EDIT) != 0;
     bool focused = false;
     bool want_scroll_to_playing_track = false;

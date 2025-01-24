@@ -20,7 +20,7 @@ static int stream_callback(const void *input, void *output, unsigned long frames
 
     stream->callback(stream->callback_data, (f32*)output, &spec);
 
-    for (int i = 0; i < frames; ++i) {
+    for (unsigned long i = 0; i < frames; ++i) {
         ((f32*)output)[i] *= stream->volume;
     }
 
@@ -28,7 +28,7 @@ static int stream_callback(const void *input, void *output, unsigned long frames
 }
 
 static void portaudio_interrupt(void *data) {
-    Portaudio_Data *pa = (Portaudio_Data*)data;
+    //Portaudio_Data *pa = (Portaudio_Data*)data;
     //Pa_AbortStream(pa->stream);
     //Pa_StartStream(pa->stream);
 }

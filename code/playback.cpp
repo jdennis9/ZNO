@@ -86,7 +86,7 @@ bool playback_update_capture_buffer(Playback_Buffer *buffer) {
     
     if (g_paused) {
         buffer->frame_count = 0;
-        for (u32 i = 0; i < buffer->channels; ++i) {
+        for (int i = 0; i < buffer->channels; ++i) {
             buffer->data[i].clear();
         }
 
